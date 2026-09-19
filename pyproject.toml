@@ -1,0 +1,40 @@
+[project]
+name = "ts-uncertainty"
+version = "0.1.0"
+description = "This thesis investigates whether uncertainty estimates from recurrent time series foundation models, remain reliable under distribution shift."
+readme = "README.md"
+requires-python = ">=3.12, <3.13"
+dependencies = [
+    "torch",
+    "torchvision",
+    "numpy",
+    "tzdata",
+    "niquests",
+    "pandas",
+    "polars>=1.39.3",
+    "ipykernel>=7.2.0",
+    "scikit-learn>=1.8.0",
+    "huggingface-hub",
+    "ipywidgets>=8.1.8",
+    "matplotlib>=3.10.8",
+    "altair>=6.1.0",
+    "pyarrow>=24.0.0",
+]
+
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu126", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+  { index = "pytorch-cu126", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[build-system]
+requires = ["uv_build>=0.11.12,<0.12"]
+build-backend = "uv_build"

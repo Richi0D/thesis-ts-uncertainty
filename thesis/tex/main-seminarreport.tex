@@ -1,0 +1,523 @@
+% !TeX program = xelatex
+% !TeX encoding = UTF-8
+% !TeX spellcheck = en_US
+% !BIB program = biber
+%% 
+%% The above lines help editors like TeXstudio to automatically choose the right tools
+%% to compile your LaTeX source file. If your tool does not support these magic comments,
+%% you will need to make appropriate manual choices.
+%% 
+%% You can safely use "pdflatex" instead of "xelatex" if you prefer the pdfLaTeX toolchain.
+%% However, pdfLaTeX will not be able to deliver the professional font experience that you
+%% will get with XeLaTeX. You can also safely use "lualatex" instead of "xelatex" while
+%% preserving the professional font experience if you prefer the LuaLaTeX toolchain.
+%% 
+%% _Important_: These magic comments should be on the first lines of your source file.
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%%            JJJJ   K                         K   UUUU         UUUU  
+%%            JJJJ   KKKK                   KKKK   UUUU         UUUU  
+%%            JJJJ   KKKKKK               KKKKKK   UUUU         UUUU  
+%%            JJJJ      KKKKKK         KKKKKK      UUUU         UUUU  
+%%            JJJJ         KKKKKK   KKKKKK         UUUU         UUUU  
+%%            JJJJ            KKKKKKKKK            UUUU         UUUU  
+%%    JJ     JJJJJ               KKK               UUUUU       UUUUU  
+%%  JJJJJJJJJJJJJ    KKKKKKKKKKKKKKKKKKKKKKKKKKK    UUUUUUUUUUUUUUU   
+%%    JJJJJJJJJ      KKKKKKKKKKKKKKKKKKKKKKKKKKK      UUUUUUUUUUU     
+%% 
+%% This is an example file for using the JKU LaTeX technical report template
+%% for your seminar report.
+%% 
+%% Template created by Michael Roland (2023)
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Document class: This is a koma-script article.
+%% 
+\documentclass[a4paper,oneside,10pt,ngerman,english]{scrartcl}
+%% 
+%% The comma-separated list in square brackets are class options.
+%% Useful options that you might want to use:
+%% 
+%% Paper size:
+%%  * a4paper ... A4 paper size
+%% 
+%% Optimize for single-sided or double-sided printing:
+%%  * oneside ... single-sided
+%%  * twoside ... double-sided
+%% 
+%% Base font size:
+%%  * 10pt ... 10-pt font is used for normal text
+%%  * 11pt ... 11-pt font is used for normal text
+%% 
+%% Define document languages (the last specified language becomes the document default
+%% language):
+%%  * ngerman ... German
+%%  * english ... English
+%%  * ...
+%% 
+%% Alternate document classes: The JKU report template supports the koma-script classes
+%% `scrartcl', `scrreprt' and `scrbook'. The article class `scrartcl' is well-suited
+%% for a typical seminar report. However, `scrbook' or `scrreprt' may be better
+%% suited for longer reports since they permit structuring your work in chapters.
+%%  
+%% _Important_: The document class should be the first line of LaTeX code in your main
+%% source file. Do not place anything but comments / magic comments above that line (unless
+%% you really know what you are doing).
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Treat input files as UTF-8 encoded. Make sure to always load this when you use pdfLaTeX
+%% so that pdfLaTeX knows how to read and interpret characters in this source file.
+%% 
+\usepackage[utf8]{inputenc}
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Use the JKU LaTeX technical report template for this document.
+%% 
+\usepackage[seminarreport,fancyfonts]{jkureport}
+%% 
+%% The comma-separated list in square brackets are theme options. Useful options that you
+%% might want to use:
+%% 
+%% Document type:
+%%  * phdthesis     ... PhD thesis.
+%%  * mathesis      ... Master's thesis.
+%%  * diplomathesis ... Diploma thesis.
+%%  * bathesis      ... Bachelor's thesis.
+%%  * seminarreport ... Seminar report.
+%%  * techreport    ... Technical report.
+%% 
+%% Color scheme selection options:
+%%  * JKU  ... Use JKU (gray) color scheme (this is the default if no scheme is selected).
+%%  * BUS  ... Use Business School color scheme.
+%%  * LIT  ... Use Linz Institute of Technology color scheme.
+%%  * MED  ... Use MED faculty color scheme.
+%%  * RE   ... Use RE faculty color scheme.
+%%  * SOE  ... Use School of Education color scheme.
+%%  * SOWI ... Use SOWI faculty color scheme.
+%%  * TNF  ... Use TNF faculty color scheme.
+%% 
+%% Space-efficient monospace font options (requires XeTeX/LuaTeX):
+%%  * compactmono   ... Use condensed fixed-width font everywhere.
+%%  * nocompactverb ... Do not use condensed fixed-width font for verbatim and listings.
+%% 
+%% Style-breaking options:
+%%  * noimprint      ... Do not insert imprint on title pages.
+%%  * nojkulogo      ... Do not insert JKU & K logos on title pages.
+%%  * capstitle      ... Set document title in capital letters.
+%%  * nofancyfonts   ... Do not use custom TTF fonts with XeTeX/LuaTeX / supress pdfLaTeX warning.
+%%  * equalmargins   ... Decrease the outer page margin to have both page margins of equal size
+%%                       (the additional outer margin is intentional and to be used for
+%%                       anotations; equalmargins also causes the text width to be
+%%                       significantly larger than optimal for reading).
+%% 
+%% Experimental options:
+%%  * mathastext ... Use standard document fonts (enhanced with symbols from Fira Math font
+%%                   when using XeTeX/LuaTeX) in math mode.
+%% 
+%% Advanced options:
+%%  * noautopdfinfo     ... Do not automatically try to add pdfinfo with hyperref from document
+%%                          metadata fields.
+%%  * logopath={<path>} ... Set the path where the theme can find its own logo resources. This
+%%                          should typically be a relative path and the default is `./logos'.
+%%  * fontpath={<path>} ... Set the path where the theme can find its own font resources. This
+%%                          should typically be a relative path and the default is `./fonts'.
+%% 
+%% Hint: Boolean options can be used in the forms `option' or `option=true' the enable the
+%% option and `nooption' or `option=false' to disable the option.
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% This is the place where you can load additional packages. If you want to load
+%% a package `biblatex', you would use the command `\usepackage{biblatex}'.
+%% 
+
+\usepackage{csquotes}
+\usepackage[backend=biber,citestyle=numeric,sortcites=true,maxcitenames=2,style=ACM-Reference-Format]{biblatex}
+\setcounter{biburlnumpenalty}{100} %% reducing biburl* penalties typically improves URL placement in bibliography
+\setcounter{biburllcpenalty}{100}
+\setcounter{biburlucpenalty}{100}
+\usepackage{todonotes}
+\usepackage{import}
+\usepackage{amsfonts}
+\usepackage{subfigure}
+%\usepackage{acronym}
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Bibliography data files.
+%% 
+
+\addbibresource{references.bib}
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Report information and title page
+%% 
+
+%% Command \title{title}: sets the title of your report
+\title{xLSTM: Extended Long Short-Term Memory}
+
+%% Command \titleshort{short title}: sets an abbreviated version of the report title for page heads
+%\titleshort{Optional space for your abbreviated title}
+
+%% Command \subtitle{subtitle}: sets the subtitle for seminar/technical reports (not used for theses)
+\subtitle{Seminar Report}
+
+%% Command \author{name}: sets the author's name; use \prefix{} and \suffix{} to add academic titles
+%%   and suffixes, use \matno{} to add the immatriculation number
+\author{Richard~Degenfellner \suffix{BSc}\matno{K11949118}}
+
+%% Command \supervisor[number,gender]{name}: sets the name of the supervisor (where number optionally
+%%   defines the rank of the supervisor (1-3) and gender specifies if the supervisor is male or female
+%%   to adapt gener-specific terms in German)
+%\supervisor[1]{\prefix{Prof. Dr.} Firstname~Lastname}
+%\supervisor[2]{\prefix{Prof. Dr.} Firstname~Lastname}
+
+%% Command \submissiondepartment{institute or department}: set the course or department that the thesis
+%%   is submitted at
+\submissiondepartment{Institute of Machine Learning}
+
+%% Command \date{YYYY-MM-DD}: set the day of submission (defaults to today)
+%\date{2020-04-09}
+
+%% Command \abstract{text}: set the document abstract on the title page
+%\abstract{Space for your (short) abstract.}
+
+%% Command \keywords{text}: set the document keywords
+%\keywords{Space for your comma-separated keywords}
+
+
+%% Finally, print the title page using the above information:
+\maketitle
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Add a table of contents
+%% 
+
+%% Make sure to start the table of contents on a new odd page (odd is only relevant in twoside layout)
+\cleardoubleoddpage
+%% Print the table of contents
+\tableofcontents
+
+%% Make sure to start the list of acronyms on a new odd page (odd is only relevant in twoside layout)
+%\cleardoubleoddpage
+%% Include list of acronyms (optional and often not necessary)
+%\import{./}{acronyms}
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Abstract: Instead of an abstract on the title page (see \abstract{...}), you
+%% sometimes want to add an abstract as its own unnumbered section.
+%% 
+
+%% (Optionally) let the abstract start on a new odd page (odd is only relevant in twoside layout)
+\cleardoubleoddpage
+
+\addsec{Abstract}
+
+This seminar report reviews the paper \textit{xLSTM: Extended Long Short-Term Memory} \cite{beck2024xlstmextendedlongshortterm} by \citeauthor{beck2024xlstmextendedlongshortterm}. The paper presents an extension of the Long Short-Term Memory (LSTM) to overcome three key limitations: the inability to revise storage decisions, limited storage capacity, and lack of parallelizability. To address these challenges, the authors introduce two modified LSTM variants, sLSTM and mLSTM. The main innovations include exponential activation functions for the input and forget gate, as well as a newly developed matrix-based memory in the mLSTM. These components are integrated into a state-of-the-art architecture called xLSTM, which demonstrates competitive performance compared to current Large Language Models (LLMs). The report includes a structured summary of the paper, addresses key research questions, and provides a critical analysis of both the technical content and the presentation.
+
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Add your report sections ...
+%% 
+
+%% (Optionally) let the main sections start on a new odd page (odd is only relevant in twoside layout)
+\cleardoubleoddpage
+
+\section{Story summary}
+\label{sec:storysummary}
+
+\begin{enumerate}
+
+\item What is the central question?
+
+Currently, LSTMs have three main limitations: inability to revise storage decisions, limited storage capacity, and lack of parallelizability due to memory mixing, as described by \citeauthor{beck2024xlstmextendedlongshortterm}~\cite{beck2024xlstmextendedlongshortterm}. So the central question is what performance can be achieved in language modeling when this limitations do not exist and LSTMs get scaled to the size of current Large Language Models. Can xLSTM outperform Transformer models?
+
+\item Why is this question important?
+
+Because as shown in the paper, xLSTM can achive the same or better performance as Transformers or State Space Models. And with further research it can be shown that larger xLSTM models can be competitors to current LLMs that uses Transformers as backbone. 
+
+\item What evidence/data (variables) are needed to answer this question?
+
+First, we need different model types and their parameter counts to compare the different models. Then performance metrics are needed, like perplexity for language modeling tasks or accuracy for synthetic tasks. Another important factor is efficiency and computational cost which can be measured by token generation time and number of parameters used.
+
+\item What methods are used to get this evidence/data?
+
+\citeauthor{beck2024xlstmextendedlongshortterm}~\cite{beck2024xlstmextendedlongshortterm} used three main experiments. First they used synthetic tasks to test the exponential gate with memory mixing, the new matrix memory and processing long sequences on the new xLSTM architecture. Then the perplexity performance off various language models on the SlimPajama (\citeauthor{cerebras2023slimpajama}~\cite{cerebras2023slimpajama}) dataset. And finally, the scaling behavior, text generation times and maximal throughput of xLSTM and other models.
+
+\item What analyses must be applied to the data to answer the central question?
+
+To demonstrate the performance of the xLSTM model on language modeling the perplexity is a good indicator and should be equal or better to similar transformer models with similar parameter count to have a positive answer on the central question. Additional computational cost should be measured and the limits of the new sLSTM and mLSTM cells must be thoroughly tested.
+
+\item What evidence/data (values for the variables) were obtained?
+
+An adapted version of the formal language tasks from \citeauthor{delétang2023neuralnetworkschomskyhierarchy}~\cite{delétang2023neuralnetworkschomskyhierarchy} showed the capabilities of the sLSTM cell. The Multi-Query Associative
+Recall task from \citeauthor{arora2023zoologymeasuringimprovingrecall}~\cite{arora2023zoologymeasuringimprovingrecall} showed the performance of the new matrix memory in the mLSTM cell with good results. Then validation perplexity scores of various models including xLSTM with similar parameter count are obtained on next token prediction where xLSTM performed best. Also, xLSTM keeps low perplexity for longer contexts up to 16k. Further, it is shown that xLSTM has similar scaling behavior as other models but overall with better performance on same parameter count. Finally the token generation time is shown where xLSTM and Mamba (\citeauthor{gu2024mambalineartimesequencemodeling}~\cite{gu2024mambalineartimesequencemodeling}) can handle a batch size up to 2048 before running out of memory and xLSTM performed best again.
+
+\item What were the results of the analyses?
+
+The results showed that with the modifications of the LSTM cell (adding exponential activation functions, normalizer state and enhance storage capacity) and building a modern architecture with this modified cells, xLSTM can compete with other Transformer and State Space Models. Efficiency and computational cost is even slightly better than other tested models as long only mLSTM Blocks are used because sLSTM is limited for parallelization due to memory mixing.
+
+\item How did the analyses answer the central question?
+
+Even in the paper \citeauthor{beck2024xlstmextendedlongshortterm}~\cite{beck2024xlstmextendedlongshortterm} could only give a partly answer. The analyses showed the xLSTM architecture can compete with other Transfomer and State Space Models with similar parameter count and xLSTM performs well on language modeling. Further, the tests were limited due to the high costs of training LLMs and the lack of parallelization for sLSTM did not solve all three main limitations completely. 
+
+\item What does this answer tell us about the broader field?
+
+Since LSTMs are widely used for other tasks than language modeling, xLSTM can have a noticeable impact for other fields like Reinforcement Learning and Time Series Prediction. In some fields LSTM outperforms Transformers as \citeauthor{trafficsignalcontrol}~\cite{trafficsignalcontrol} shows it for traffic signal controls and \citeauthor{egusphere-2025-1706}~\cite{egusphere-2025-1706} showed it for regression tasks and was limited by the LSTM and Transformer architecture. So, xLSTM might be the solution to boost performance further. 
+
+\item Did the paper answer the question satisfactorily? Why (not)? (only relevant for the Seminar)
+
+Not completely, for the language modeling part we can say yes but for all other task we need to say no. The paper showed the possibilities of the new xLSTM architecture. A full clear answer is still missing if xLSTM really can outperform Transformer models on every task. It was only shown that it can compete with similar LLMs on language modeling. But Transformers are also not only used for language modeling. But since computational costs are high to train big models, it is understandable that the paper only concentrated on language modeling where transformers shine.
+
+
+\end{enumerate}
+
+\section{Paper Summary}
+\label{sec:papersummary}
+
+This chapter summarizes the paper xLSTM: Extended Long Short-Term Memory by \citeauthor{beck2024xlstmextendedlongshortterm}~\cite{beck2024xlstmextendedlongshortterm}. It provides an overview of the current limitations of the LSTM (\citeauthor{LSTM}~\cite{LSTM}) and explains how the authors improve it by proposing a new architecture that can compete with current state-of-the-art Large Language Models.
+
+\subsection{Introduction}
+\label{sec:introduction}
+
+In recent years, Large Language Models (LLMs) have achieved great success with the introduction of the transformer architecture published by \citeauthor{DBLP:journals/corr/VaswaniSPUJGKP17}~\cite{DBLP:journals/corr/VaswaniSPUJGKP17}. On the other hand, LSTMs, published by \citeauthor{LSTM}~\cite{LSTM}, were highly successful in the past across various domains involving sequence-related tasks. They are still used today, but they are not well adapted for very large architectures such as LLMs due to several limitations. LSTMs are particularly strong at extracting semantic information and storing it in their memory cells (\citeauthor{karpathy}~\cite{karpathy}). 
+
+An LSTM maintains a cell state $c_t$ and a hidden state $h_t$, which can be computed using the update rule shown in \autoref{eq:lstm_state_update}. The gate activation function $\sigma$ is usually a sigmoid function.
+
+\begin{align}
+	i_t &= \sigma \left( w_i^{\top} x_t + r_i s_{t-1} + b_i \right) \\
+	f_t &= \sigma \left( w_f^{\top} x_t + r_f s_{t-1} + b_f \right) \\
+	o_t &= \sigma \left( w_o^{\top} x_t + r_o s_{t-1} + b_o \right) \\
+	z_t &= g \left( w_z^{\top} x_t + r_z s_{t-1} + b_z \right) \\
+	c_t &= f_t c_{t-1} + i_t z_t \\
+	h_t &= o_t \, h(c_t)
+	\label{eq:lstm_state_update}
+\end{align}
+
+The authors identified three main limitations in the original LSTM.
+\begin{itemize}
+	\item \textbf{Inability to revise storage decisions.} This means that it is difficult for the LSTM to overwrite the cell state $c_t$ with new information. The cell state mostly retains the old value and only adds a small amount of new information.
+	\item \textbf{Limited storage capacity.} Since the cell state $c_t$ is only a scalar value, it can store only a single value.
+	\item \textbf{Lack of parallelizability due to memory mixing.} The time steps must be processed sequentially. This can be seen in the update rules for the gates $i_t$, $f_t$, and $o_t$, where the previous time step $t-1$ is required to compute the current time step $t$.
+\end{itemize}
+
+These limitations lead the authors to raise the question: “What happens if we scale LSTMs to the size of current Large Language Models and remove some of their limitations?”
+
+\subsection{Extended Long Short-Term Memory}
+\label{sec:xlstm}
+
+To mitigate the identified limitations of LSTMs, the authors modify the original LSTM cell by introducing two improved variants called sLSTM and mLSTM. These cells incorporate exponential activation functions to address the inability to revise storage decisions. In addition, the mLSTM introduces a new matrix-based memory that increases storage capacity and abandons memory mixing, enabling parallelization.
+
+\subsubsection{sLSTM}
+\label{sec:slstm}
+
+The first modification introduced in the sLSTM is the use of exponential activation functions for the input gate $i_t$ and the forget gate $f_t$. This allows the cell to overwrite the cell state $c_t$ more sharply and reduces the difficulty of revising storage decisions.
+
+However, these exponential activation functions can lead to large values, which may make the cell unstable. To mitigate this issue, a new normalizer state $n_t$ is introduced. In addition, a stabilizer state $m_t$ is used (\autoref{eq:slstm_update_stabilized}), which has no gradients and therefore does not influence other gradients. With this additional state $m_t$, a stabilized version of the sLSTM can be constructed.
+
+\begin{align}
+	i_t &= \exp\!\left(w_i^{\top} x_t + r_i s_{t-1} + b_i\right) \\
+	f_t &= \exp\!\left(w_f^{\top} x_t + r_f s_{t-1} + b_f\right) \\
+	o_t &= \sigma\!\left(w_o^{\top} x_t + r_o s_{t-1} + b_o\right) \\
+	z_t &= g\!\left(w_z^{\top} x_t + r_z s_{t-1} + b_z\right) \\[6pt]
+	c_t &= f_t\, c_{t-1} + i_t\, z_t \\
+	n_t &= f_t\, n_{t-1} + i_t \\[6pt]
+	h_t &= o_t\, \frac{c_t}{n_t}
+	\label{eq:slstm_update}
+\end{align}
+\begin{align}
+	\label{eq:slstm_update_stabilized}
+	m_t &= \max\!\left(\log(f_t) + m_{t-1}, \; \log(i_t)\right) \\
+	i'_t &= \exp\!\left(\log(i_t) - m_t \right) \\
+	f'_t &= \exp\!\left(\log(f_t) + m_{t-1} - m_t \right)
+\end{align}
+
+The sLSTM does not solve the limitation of restricted storage capacity, since the cell state remains a scalar. Furthermore, it still does not allow parallelization due to a different form of memory mixing.
+
+\subsubsection{mLSTM}
+\label{sec:mlstm}
+
+In the mLSTM, the authors apply the same exponential activation functions for the input gate $i_t$ and the forget gate $f_t$ as in the sLSTM. In addition, they improve memory capacity by expanding the cell value from a scalar $c \in \mathbb{R}$ to a matrix $C \in \mathbb{R}^{d \times d}$.
+
+This is achieved by storing a key-value pair consisting of two vectors $k_t \in \mathbb{R}^d$ and $v_t \in \mathbb{R}^d$ via a covariance update rule (\citeauthor{covariance_update}~\cite{covariance_update}, \citeauthor{covariance_update2}~\cite{covariance_update2}) shown in \autoref{eq:mlstm_covariance_update}. The value $v_t$ is then retrieved using a query vector $q_t \in \mathbb{R}^d$.
+
+\begin{align}
+	i_t &= \exp\!\left(w_i^{\top} x_t + b_i\right) \\
+	f_t &= \exp\!\left(w_f^{\top} x_t + b_f\right) \\
+	o_t &= \sigma\!\left(W_o^{\top} x_t + b_o\right) \\
+	q_t &= W_q x_t + b_q \\
+	v_t &= W_v x_t + b_v \\
+	k_t &= \frac{1}{\sqrt{d}}\, W_k x_t + b_k \\[6pt]
+	\label{eq:mlstm_covariance_update}
+	C_t &= f_t C_{t-1} + i_t\, v_t k_t^{\top} \\
+	n_t &= f_t n_{t-1} + i_t\, k_t \\[6pt]
+	h_t &= o_t \odot \frac{C_t q_t}{\max\!\left(\left| n_t^{\top} q_t \right|, 1\right)}
+\end{align}
+
+As in the sLSTM, a new normalizer state $n_t$ is introduced, and the same stabilization technique shown in \autoref{eq:slstm_update_stabilized} is used to mitigate the problem of large exponential values in the input and forget gates.
+
+Since the mLSTM does not rely on memory mixing and does not depend on the previous time step $t-1$ to compute the current time step $t$, the mLSTM update rule can be reformulated in a parallel version. This enables the computation of the mLSTM cell in parallel and removes the third limitation of the original LSTM.
+
+\subsubsection{xLSTM Architecture}
+\label{sec:xLSTMArchitecture}
+
+To construct the xLSTM architecture using the improved sLSTM and mLSTM cells, the authors introduce two types of blocks. The post up-projection block is primarily used for sLSTM, while the pre up-projection block is used for mLSTM.
+
+\begin{itemize}
+	\item \textbf{A residual block with post up-projection.} This design is similar to that used in Transformers. The block first processes the input in the original space, then linearly maps it into a high-dimensional space, applies a non-linear activation function, and finally maps it back to the original space.
+	
+	\item \textbf{A residual block with pre up-projection.} This design is similar to that used in State Space Models. The block first linearly maps the input to a high-dimensional space, non-linearly summarizes the past in this space, and then linearly maps the result back to the original space.
+\end{itemize}
+
+To complete the xLSTM architecture, multiple of these blocks are stacked together using residual connections.
+
+\subsection{Experiments}
+\label{sec:experiments}
+
+This section discusses the experiments and results of xLSTM. The authors conduct various experiments, particularly in the domain of language modeling, and compare xLSTM to other model architectures such as Transformers and State Space Models.
+
+In the first part, they evaluate the performance of xLSTM on state-tracking problems and analyze the memory capacity of the new xLSTM architecture. In the next part, they evaluate general language modeling performance. Finally, they test xLSTM as a Large Language Model to provide insights into how well the architecture scales with increasing model size.
+
+Since sLSTM and mLSTM blocks can be combined in different ways, the authors use the notation xLSTM[a:b], which defines the ratio of mLSTM and sLSTM blocks. For example, xLSTM[7:1] means that out of eight blocks, seven are mLSTM-based blocks and one is an sLSTM-based block.
+
+\subsubsection{Synthetic Tasks and Capacity Testing}
+\label{sec:synthetictasks}
+
+The parity task evaluates whether different models can track state over time. The results show that models without memory mixing fail to solve this task. The sLSTM successfully solves the task, whereas the mLSTM and other models based on Transformers or State Space Models without memory mixing fail. This result clearly demonstrates the advantage of the sLSTM block with memory-mixing capabilities.
+
+To evaluate the capacity of the mLSTM, the authors use the Multi-Query Associative Recall task from \citeauthor{arora2023zoologymeasuringimprovingrecall}~\cite{arora2023zoologymeasuringimprovingrecall}. To increase the difficulty, the number of key-value pairs is increased up to 256 and the context length up to 2048. This experiment demonstrates the improved memory capacity provided by the matrix memory in the mLSTM. In this test, xLSTM does not reach the performance of Transformer-based models but still shows strong potential by achieving the second-best performance among all evaluated models. The authors also report an interesting observation: the inclusion of an sLSTM block does not reduce performance. Instead, it improves performance, particularly in the most difficult task with 256 key-value pairs.
+
+\subsubsection{Language Modeling Performance}
+\label{sec:llmperformance}
+
+Among all tested models, including Transformers, State Space Models, and Recurrent Neural Networks trained on 15B tokens from SlimPajama (\citeauthor{cerebras2023slimpajama}~\cite{cerebras2023slimpajama}), xLSTM achieves the lowest perplexity.
+
+Furthermore, performance on several downstream tasks is evaluated. For these experiments, the dataset size is increased to 300B tokens from SlimPajama. The tests are conducted with model sizes of approximately 125M, 350M, 760M, and 1.3B parameters. In terms of average accuracy, xLSTM performs best across all model sizes.
+
+\subsubsection{Scaling law, Generation Times and Maximal Throughput}
+\label{sec:scalingperformance}
+
+To evaluate how well the xLSTM architecture scales, the authors conduct experiments on next-token prediction perplexity using models trained on 300B tokens from SlimPajama. The models are evaluated at sizes of 125M, 350M, 760M, and 1.3B parameters. The results show almost linear scaling of xLSTM while maintaining the lowest perplexity among all tested models. This suggests that xLSTM may continue to perform well when scaled to larger model sizes.
+
+Another experiment analyzes generation time with increasing generation length. The results show that xLSTM keeps linear generation time. In contrast, Transformer-based models such as Llama (\citeauthor{touvron2023llamaopenefficientfoundation}~\cite{touvron2023llamaopenefficientfoundation}) show quadratic inference/decoding time with increasing sequence length.
+
+In the final experiment, the authors evaluate token throughput performance. xLSTM again achieves strong results. While Transformer-based models such as Llama run out of memory for batch sizes larger than 128, xLSTM can sustain large batch sizes of up to 2048. Additionally, xLSTM is the fastest model and achieves the highest token generation time across all tested batch sizes.
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+xLSTM can compete with other models on language modeling tasks, but it comes with some limitations. While mLSTM allows parallelized computation, sLSTM does not allow it due to memory mixing. However, the authors developed a fast CUDA kernel for sLSTM that mitigates this problem and is currently less than two times slower than the parallel mLSTM implementation.
+
+The matrix memory of the mLSTM has high computational complexity, since it requires computing a $d \times d$ matrix. However, the update and retrieval operations are parameter-free and parallelizable.
+
+Training Large Language Models has high computational costs. Due to these constraints, the authors were not able to fully optimize the architecture and its hyperparameters. To achieve the full potential of xLSTM, further optimization is required.
+
+\section{Paper Analysis}
+\label{sec:paperanalysis}
+
+This section provides an analysis of the paper \textit{xLSTM: Extended Long Short-Term Memory} \cite{beck2024xlstmextendedlongshortterm} by \citeauthor{beck2024xlstmextendedlongshortterm}. It highlights key aspects such as motivation, experiments, interpretation, related work, presentation, and readability.
+
+\subsection{Motivation and Problem Definition}
+\label{sec:motivation}
+
+The primary motivation of the authors is the lack of scalability of the Long Short-Term Memory (LSTM) and its limited suitability for Large Language Models (LLMs), as transformers have outpaced its adoption. This motivation is clearly reflected in the questions raised by the authors. They successfully identify three main limitations of the vanilla LSTM that made the LSTM hard to use for LLMs: the inability to revise storage decisions, limited storage capacity, and lack of parallelizability. These issues are clearly communicated in the paper and are supported by experimental evidence.
+
+\subsection{Technical Innovation and Methodology}
+\label{sec:innovation}
+
+The authors address the three main limitations by extending the vanilla LSTM cell with exponential gating mechanisms and a matrix-based memory. In addition, they introduce a new architecture consisting of two improved LSTM variants: sLSTM and mLSTM.
+
+The modifications to the LSTM cell are explained clearly and formulated by the necessary equations. The paper provides all necessary update equations and key insights. Specially, in the appendix one can find all necessary information to implement the xLSTM architecture. However, the description of the sLSTM and mLSTM blocks lack detail and could be better described. But the linked GitHub repository provides a complete implementation, which makes it adoption easier.
+
+\subsection{Experimental Evaluation and Interpretation}
+\label{sec:evalutation}
+
+Since the main objective is to evaluate how well the xLSTM architecture competes with state-of-the-art Large Language Models, the experiments focus primarily on language modeling tasks. These experiments are well designed, and the authors present all necessary results in the form of tables and figures.
+
+Positively to mention is the inclusion of experiments analyzing throughput and generation time for varying sequence lengths. But the lack of experiments on the individual sLSTM and mLSTM cell makes it hard to directly compare them with the vanilla LSTM cell. It remains unclear how each modification independently affects performance.
+
+\subsection{Critique and Limitations}
+\label{sec:critique}
+
+As with any new architecture, xLSTM introduces its own limitations. The authors address these transparently throughout the paper and propose solutions to mitigate some of them, such as a custom CUDA kernel for the sLSTM. They also acknowledge that the architecture requires further optimization to reach its full potential.
+
+\subsection{Presentation and Readability}
+\label{sec:readability}
+
+Overall, the paper is well presented and maintains a consistent level of readability. The experiments are clearly illustrated with plots and tables, and the detailed appendix provides the necessary mathematical proofs and formulations. This makes the paper a valuable contribution to the field.
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+The xLSTM architecture successfully revive the LSTM and makes it a competitor to other Large Language Models. By introducing two key changes, the exponential gating and the new matrix-based memory for mLSTM it demonstrates that the architecture can match or even exceed the performance of Transformers and State Space Models. 
+
+The results indicate that xLSTM can scale further and benefit from additional optimization. The implemented changes do not fully resolve all limitations, as sLSTM still cannot be parallelized. But, the overall xLSTM architecture, along with the newly introduced sLSTM and mLSTM cells, shows strong potential for applications beyond language modeling, such as reinforcement learning and time series prediction.
+
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Print the bibliography
+%% 
+%% (Optionally) let the bibliography start on a new odd page (odd is only relevant in twoside layout)
+%\cleardoubleoddpage
+\printbibliography
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Begin with the appendix part (all further sections will be appendices)
+%\appendix
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Add your appendix sections ...
+%% 
+
+%% Make sure to start the appendix on a new odd page (odd is only relevant in twoside layout)
+%\cleardoubleoddpage
+
+
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\cleardoubleoddpage
+
+\end{document}
+\endinput

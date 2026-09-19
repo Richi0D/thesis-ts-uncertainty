@@ -1,0 +1,779 @@
+% !TeX program = xelatex
+% !TeX encoding = UTF-8
+% !TeX spellcheck = en_US
+% !BIB program = biber
+%% 
+%% The above lines help editors like TeXstudio to automatically choose the right tools
+%% to compile your LaTeX source file. If your tool does not support these magic comments,
+%% you will need to make appropriate manual choices.
+%% 
+%% You can safely use "pdflatex" instead of "xelatex" if you prefer the pdfLaTeX toolchain.
+%% However, pdfLaTeX will not be able to deliver the professional font experience that you
+%% will get with XeLaTeX. You can also safely use "lualatex" instead of "xelatex" while
+%% preserving the professional font experience if you prefer the LuaLaTeX toolchain.
+%% 
+%% _Important_: These magic comments should be on the first lines of your source file.
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%%            JJJJ   K                         K   UUUU         UUUU  
+%%            JJJJ   KKKK                   KKKK   UUUU         UUUU  
+%%            JJJJ   KKKKKK               KKKKKK   UUUU         UUUU  
+%%            JJJJ      KKKKKK         KKKKKK      UUUU         UUUU  
+%%            JJJJ         KKKKKK   KKKKKK         UUUU         UUUU  
+%%            JJJJ            KKKKKKKKK            UUUU         UUUU  
+%%    JJ     JJJJJ               KKK               UUUUU       UUUUU  
+%%  JJJJJJJJJJJJJ    KKKKKKKKKKKKKKKKKKKKKKKKKKK    UUUUUUUUUUUUUUU   
+%%    JJJJJJJJJ      KKKKKKKKKKKKKKKKKKKKKKKKKKK      UUUUUUUUUUU     
+%% 
+%% This is an example file for using the JKU LaTeX technical report template
+%% for your technical report.
+%% 
+%% Template created by Michael Roland (2021)
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Document class: This is a koma-script article.
+%% 
+\documentclass[a4paper,oneside,10pt,ngerman,english]{scrartcl}
+%% 
+%% The comma-separated list in square brackets are class options.
+%% Useful options that you might want to use:
+%% 
+%% Paper size:
+%%  * a4paper ... A4 paper size
+%% 
+%% Optimize for single-sided or double-sided printing:
+%%  * oneside ... single-sided
+%%  * twoside ... double-sided
+%% 
+%% Base font size:
+%%  * 10pt ... 10-pt font is used for normal text
+%%  * 11pt ... 11-pt font is used for normal text
+%% 
+%% Define document languages (the last specified language becomes the document default
+%% language):
+%%  * ngerman ... German
+%%  * english ... English
+%%  * ...
+%% 
+%% Alternate document classes: The JKU report template supports the koma-script classes
+%% `scrartcl', `scrreprt' and `scrbook'. The article class `scrartcl' is well-suited
+%% for a typical technical report. However, `scrbook' or `scrreprt' may be better
+%% suited for longer reports since they permit structuring your work in chapters.
+%%  
+%% _Important_: The document class should be the first line of LaTeX code in your main
+%% source file. Do not place anything but comments / magic comments above that line (unless
+%% you really know what you are doing).
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Treat input files as UTF-8 encoded. Make sure to always load this when you use pdfLaTeX
+%% so that pdfLaTeX knows how to read and interpret characters in this source file.
+%% 
+\usepackage[utf8]{inputenc}
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Use the JKU LaTeX technical report template for this document.
+%% 
+\usepackage[techreport,nofancyfonts]{jkureport}
+%% 
+%% The comma-separated list in square brackets are theme options. Useful options that you
+%% might want to use:
+%% 
+%% Document type:
+%%  * phdthesis     ... PhD thesis.
+%%  * mathesis      ... Master's thesis.
+%%  * diplomathesis ... Diploma thesis.
+%%  * bathesis      ... Bachelor's thesis.
+%%  * seminarreport ... Seminar report.
+%%  * techreport    ... Technical report.
+%% 
+%% Color scheme selection options:
+%%  * JKU  ... Use JKU (gray) color scheme (this is the default if no scheme is selected).
+%%  * BUS  ... Use Business School color scheme.
+%%  * LIT  ... Use Linz Institute of Technology color scheme.
+%%  * MED  ... Use MED faculty color scheme.
+%%  * RE   ... Use RE faculty color scheme.
+%%  * SOE  ... Use School of Education color scheme.
+%%  * SOWI ... Use SOWI faculty color scheme.
+%%  * TNF  ... Use TNF faculty color scheme.
+%% 
+%% Space-efficient monospace font options (requires XeTeX/LuaTeX):
+%%  * compactmono   ... Use condensed fixed-width font everywhere.
+%%  * nocompactverb ... Do not use condensed fixed-width font for verbatim and listings.
+%% 
+%% Style-breaking options:
+%%  * noimprint      ... Do not insert imprint on title pages.
+%%  * nojkulogo      ... Do not insert JKU & K logos on title pages.
+%%  * capstitle      ... Set document title in capital letters.
+%%  * nofancyfonts   ... Do not use custom TTF fonts with XeTeX/LuaTeX / supress pdfLaTeX warning.
+%%  * equalmargins   ... Decrease the outer page margin to have both page margins of equal size
+%%                       (the additional outer margin is intentional and to be used for
+%%                       anotations; equalmargins also causes the text width to be
+%%                       significantly larger than optimal for reading).
+%% 
+%% Experimental options:
+%%  * mathastext ... Use standard document fonts (enhanced with symbols from Fira Math font
+%%                   when using XeTeX/LuaTeX) in math mode.
+%% 
+%% Advanced options:
+%%  * noautopdfinfo     ... Do not automatically try to add pdfinfo with hyperref from document
+%%                          metadata fields.
+%%  * logopath={<path>} ... Set the path where the theme can find its own logo resources. This
+%%                          should typically be a relative path and the default is `./logos'.
+%%  * fontpath={<path>} ... Set the path where the theme can find its own font resources. This
+%%                          should typically be a relative path and the default is `./fonts'.
+%% 
+%% Hint: Boolean options can be used in the forms `option' or `option=true' the enable the
+%% option and `nooption' or `option=false' to disable the option.
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% This is the place where you can load additional packages. If you want to load
+%% a package `biblatex', you would use the command `\usepackage{biblatex}'.
+%% 
+
+\usepackage{csquotes}
+\usepackage[backend=biber,citestyle=numeric,sortcites=true,maxcitenames=2,style=ACM-Reference-Format]{biblatex}
+\setcounter{biburlnumpenalty}{100} %% reducing biburl* penalties typically improves URL placement in bibliography
+\setcounter{biburllcpenalty}{100}
+\setcounter{biburlucpenalty}{100}
+\usepackage{todonotes}
+\usepackage{import}
+\usepackage{amsfonts}
+\usepackage{subfigure}
+%\usepackage{acronym}
+\usepackage{threeparttable}
+\usepackage{hyperref}
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Bibliography data files.
+%% 
+
+\addbibresource{references.bib}
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Report information and title page
+%% 
+
+%% Command \title{title}: sets the title of your report
+\title{TiRex methods analyzed with different loss functions.}
+
+%% Command \titleshort{short title}: sets an abbreviated version of the report title for page heads
+%\titleshort{Optional space for your abbreviated title}
+
+%% Command \subtitle{subtitle}: sets the subtitle for seminar/technical reports (not used for theses)
+\subtitle{Technical Report\\%
+    \usekomafont{subtitlesmall}%
+    \hfill\\%
+    Institute of Machine Learning\\
+    \hfill\\%
+}
+
+%% Command \author{name}: sets the author name(s); separate multiple authors with \and; use \prefix{}
+%%   and \suffix{} to add academic titles and suffixes (if needed); use \affiliation{} to add an
+%%   affiliation, use \authornewline to add line breaks (e.g. to separate authors from contact
+%%   information), use \authormail{}, \authorweb{}, \authorphone{} and \authorfax{} to add contact
+%%   information)
+\author{%
+    Richard Degenfellner \suffix{BSc}\matno{K11949118}
+    \affiliation{Institute of Machine Learning}
+    \authornewline
+    %\authorphone{+43 732 2468-XXXX}
+    \authormail{K11949118@students.jku.at}
+    %\authorweb{https://jku.at/ins}
+    \authornewline
+}
+
+%% Command \date{YYYY-MM-DD}: set the day of publication (defaults to today)
+%\date{2020-04-09}
+
+%% Command \partnerlogo{filename}: use filename as partnerlogo, filename may be blank to disable the logo
+%\partnerlogo{logos/ins}
+
+%% Command \revisionblock{text}: set the document revision block on the title page
+%\revisionblock{Space for your revision block, acknowledgements, etc.}
+
+%% Command \reportnumber{number}: set the report number
+%\reportnumber{Space for your report number}
+
+%% Command \setbottommark{text}: set the bottom mark (in document footer)
+%\setbottommark{Space for your bottom mark}
+
+%% Command \abstract{text}: set the document abstract on the title page
+%\abstract{Space for your (short) abstract.}
+
+%% Command \keywords{text}: set the document keywords
+%\keywords{Space for your comma-separated keywords}
+
+
+%% Finally, print the title page using the above information:
+\maketitle
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Add a table of contents
+%% 
+
+%% Make sure to start the table of contents on a new odd page (odd is only relevant in twoside layout)
+\cleardoubleoddpage
+%% Print the table of contents
+\tableofcontents
+
+%% Make sure to start the list of acronyms on a new odd page (odd is only relevant in twoside layout)
+%\cleardoubleoddpage
+%% Include list of acronyms (optional and often not necessary)
+%\import{./}{acronyms}
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Abstract: Instead of an abstract on the title page (see \abstract{...}), you
+%% sometimes want to add an abstract as its own unnumbered section.
+%% 
+
+%% (Optionally) let the abstract start on a new odd page (odd is only relevant in twoside layout)
+\cleardoubleoddpage
+
+\addsec{Abstract}
+
+Time series foundation models promise strong zero-shot forecasting performance. This work investigates the TiRex foundation model. We compare three loss functions (quantile, MSE, L1), the model's original multi-patch forecasting behavior against an autoregressive generation strategy, and two dataloader masking strategies (Contiguous Patch Masking vs. Mask Horizon). We also train a strongly parameter-reduced custom TiRex variant (1.6 million vs. 35 million parameters) from scratch and compare an xLSTM layer against a standard LSTM layer within the same architecture. All experiments are evaluated on a combined dataset of household, national, and European energy time series. Results show that L1 loss consistently yields the best SMAPE scores while quantile loss performs worst, that autoregressive generation improves performance for long forecast horizons but induces quantile collapse, that CPM clearly outperforms the mask horizon strategy, and that the LSTM layer performs slightly better than sLSTM under identical hyperparameters. While the custom, parameter-reduced model cannot match the pre-trained TiRex model's performance, it still learns meaningful forecasting behavior. However, fine-tuning the pre-trained model on a specific task or sequence yields a noticeably larger performance gain, suggesting that fine-tuning the existing foundation model is the more effective route compared to training a smaller custom model from scratch. The work can be found in the GitHub repository:  \url{https://github.com/Richi0D/tirex_loss}
+
+
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Add your report sections ...
+%% 
+
+%% (Optionally) let the main sections start on a new odd page (odd is only relevant in twoside layout)
+\cleardoubleoddpage
+
+\section{Introduction}
+\label{sec:introduction}
+
+Accurate time series forecasting is a core requirement in many domains, such as load forecasting, renewable generation forecasting and price forecasting. Good forecasting methods support grid stability, resource planning and market operations. Traditionally, such forecasting problems have been addressed with statistical models or deep learning models trained from scratch for a specific dataset or task.
+
+Recently, time series foundation models, large models pre-trained on diverse collections of time series, have emerged as a promising alternative, offering zero-shot forecasting capability without task-specific training. TiRex (\citeauthor{auer2025tirexzeroshotforecastinglong}~\cite{auer2025tirexzeroshotforecastinglong}), a foundation model built on the xLSTM architecture (\citeauthor{beck2024xlstmextendedlongshortterm}~\cite{beck2024xlstmextendedlongshortterm}), is one such recent model and achieves strong zero-shot performance on general forecasting benchmarks. 
+
+This work (\url{https://github.com/Richi0D/tirex_loss}) investigates the TiRex model in the context of energy time series forecasting through several practical modifications and experiments: (i) fine-tuning the pre-trained model on energy data with different loss functions, (ii) comparing the model's original multi-patch forecasting behavior with an autoregressive generation strategy, (iii) training a strongly parameter-reduced custom variant of TiRex from scratch, (iv) comparing two dataloader masking strategies for training, and (v) comparing the xLSTM layer with a standard LSTM layer within the same architecture. All experiments are evaluated on a combined dataset of energy time series from household, national, and European sources. The remainder of this paper is structured as follows: \autoref{sec:methods} describes the data, methods, and experimental setup; \autoref{sec:results} presents and discusses the results; and \autoref{sec:conclusion} summarizes the findings and outlines directions for future work.
+
+\section{Methods and Experiments}
+\label{sec:methods}
+
+This section describes all the methods, experiments and modifications to the TiRex model by \citeauthor{auer2025tirexzeroshotforecastinglong}~\cite{auer2025tirexzeroshotforecastinglong}.
+
+For all fine-tuning and training tasks, an AdamW optimizer (\citeauthor{loshchilov2019decoupledweightdecayregularization}~\cite{loshchilov2019decoupledweightdecayregularization}) is used. See \autoref{tab:tirex_hyperparameters_transposed} for hyperparameter settings.
+
+\begin{table}[htbp]
+	\centering
+	\caption{Hyperparameter configurations for TiRex model variants.}
+	\label{tab:tirex_hyperparameters_transposed}
+	\begin{tabular}{lcc}
+		\toprule
+		\textbf{Hyperparameter} & \textbf{Fine-tuned (Pre-trained)} & \textbf{Custom Model} \\
+		\midrule
+		Learning Rate     & $1 \times 10^{-4}$ & $1 \times 10^{-4}$ \\
+		Weight Decay      & $1 \times 10^{-2}$ & $1 \times 10^{-2}$ \\
+		Gradient Clipping & None               & Max Norm: 1.0 \\
+		LR Scheduler      & ExponentialLR ($\gamma = 0.99$) & ExponentialLR ($\gamma = 0.99$) \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+The pre-trained TiRex model is fine-tuned for a maximum of 15 epochs. The custom model is trained for a maximum of 100 epochs. All main evaluations use the model checkpoint with the best test loss during training, which means some models were effectively trained for fewer epochs than others. A separate comparison between the best and the last test loss is given in \autoref{sec:best_vs_last_results}. Detailed loss scores and plots are provided in \autoref{app:an-appendix}.
+
+\subsection{Training and Test data}
+\label{sec:data}
+All datasets used in this work are from the energy domain. They contain time series at various intervals ranging from 5 to 60 minutes. 
+
+\begin{itemize}[]
+	\item Electricity consumption of a single two-person household in Austria, collected from the household meter. The time series has a 15-minute interval and contains around 100k timestamps.
+	\item OPSD Time Series (Europe)~\cite{opsd}: Energy load, energy generation, and price time series from 32 European countries. Only the stacked 15- and 60-minute datasets are used.
+	\item Open Energy Hub~\cite{openenergyhub}: A renewable energy and electricity demand dataset with exogenous variables at 5-minute intervals. Only the production and demand columns are used.
+	\item FETS Dataset~\cite{obermeier_2026_19418721}: Contains time series from the European and international energy domain.
+\end{itemize}
+
+These individual sources were combined into a single dataset containing 361 different series in total. For each series, the last 30\% of timestamps are held out for testing and evaluation and further split with a ratio of 50\%. While the remaining 70\% are used for training. This creates a 70\%, 15\%, 15\% dataset split. In total, this amounts to around 17.7 million timesteps for training and around 7.6 million timesteps for testing and evaluation. However, due to computational limitations, only a subset of the full dataset is used in practice: to train and evaluate the custom TiRex model, only 72 (20\%) of the 361 series are used. For fine-tuning the pre-trained TiRex foundation model, only a single time series, "DE Power - Load DE" from the FETS Dataset~\cite{obermeier_2026_19418721}, is used, which contains 5 years of data at a 15-minute interval (around 200k timesteps).
+
+A fixed random seed is used across all experiments to make the data splits deterministic and reproducible, which allows the different models to be compared on the exact same test dataset.
+
+\subsection{Loss functions}
+\label{sec:loss}
+
+Three loss functions are used to explore their effect in the TiRex setting.
+ 
+\begin{itemize}[]
+	\item Quantile Loss: with $Q$ the quantile levels, $y_t$ the true value at time $t$, $\hat{y}_t^q$ the quantile prediction for quantile level $q$, and $h$ the forecast horizon.
+	\begin{equation}
+		L = \frac{1}{|Q| \cdot h} \sum_{t=1}^{h} \sum_{q \in Q} 
+		\begin{cases} 
+			q (y_t - \hat{y}_t^q) & \text{if } \hat{y}_t^q \le y_t \\
+			(1 - q) (\hat{y}_t^q - y_t) & \text{otherwise.}
+		\end{cases}
+	\label{eq:quantile_loss}
+	\end{equation}
+
+	\item Mean squared error (MSE): with $q=0.5$ (median) as the fixed quantile.
+	\begin{equation}
+		MSE = \frac{1}{h} \sum_{t=1}^{h} (y_t - \hat{y}_t^q)^2
+	\end{equation}	
+	
+	\item L1 Loss (MAE): with $q=0.5$ (median) as the fixed quantile.
+	\begin{equation}
+		L1 = \frac{1}{h} \sum_{t=1}^{h}  |y_t - \hat{y}_t^q|
+	\end{equation}	
+\end{itemize}
+
+
+\subsection{Autoregressive}
+\label{sec:autoregressive}
+
+A first look was given the generation method used for predictions, referred to as multi-patch prediction. The TiRex foundation model by  \citeauthor{auer2025tirexzeroshotforecastinglong}~\cite{auer2025tirexzeroshotforecastinglong} has a context length $c$ of 2048 and predicts the next patch with output patch length of 32. If the forecast horizon $h$ exceeds the output patch length, multiple patches must be predicted. For a given time series with length $n$ and a forecast horizon $h>32$ the TiRex model uses the last $c$ timesteps of $n$, shifts the context window $c$ by the output patch length and appends the previously predicted patch as missing (NaN) values. So, the longer the forecast horizon $h$ gets, the less real context the model has available. If $h>c$ the context window is eventually filled entirely with zeros (NaN replacement value) and the model predicts only zeros.
+
+Other existing pre-trained models (\citeauthor{das2024decoderonlyfoundationmodeltimeseries}~\cite{das2024decoderonlyfoundationmodeltimeseries}; \citeauthor{ansari2024fast}~\cite{ansari2024fast}) address this issue via autoregressive generation, using point estimates such as the mean or median. Therefore, the forecast generation method of the TiRex model is modified to use autoregressive generation: instead of inserting missing values, the median of the previously predicted patch is concatenated to the context $c$.
+
+The pre-trained TiRex model was fine-tuned on a single time series, "DE Power - Load DE" from the FETS Dataset, using both the original behavior and the autoregressive method, across all three loss functions described in \autoref{sec:loss}. Fine-tuning was performed by sampling sequences with random horizon lengths between 32 and 128 and passing them through the prediction function, in which a multi-patch prediction is generated and the loss is computed against the true values.
+
+\subsection{Custom TiRex model}
+\label{sec:custom_tirex}
+
+Due to limited computational resources, the TiRex model was reduced from around 35 million parameters to 1.6 million parameters via a custom implementation. It uses the same architecture, but with hidden sizes reduced by half, a single sLSTM block instead of 12, and a context length reduced to 1024, exactly half that of the pre-trained TiRex model.
+
+The custom TiRex model was trained in various variants, using all loss functions from \autoref{sec:loss}. See \autoref{sec:cpm} and \autoref{sec:xlstm_vs_lstm} for details on the individual variants.
+
+Two dataset variants were used to train the custom model: a larger dataset with 72 time series, and the single series "DE Power - Load DE" described in \autoref{sec:data}, the latter enabling a direct comparison with the fine-tuned TiRex model. For training on the single series, the mask horizon strategy described in \autoref{sec:cpm} is used.
+
+\subsubsection{CPM and MH}
+\label{sec:cpm}
+ 
+Two different dataloader strategies are implemented for training. The first is Contiguous Patch Masking (CPM), as described in the TiRex paper by \citeauthor{auer2025tirexzeroshotforecastinglong}~\cite{auer2025tirexzeroshotforecastinglong}. The second is mask horizon (MH), which replicates the multi-patch prediction behavior of the TiRex model. Mask horizon takes a sequence of length $n$ plus a target length $s$ and creates an input sequence by shifting the context by $s$ and padding the shifted region with missing values. The last patch is used as the target to compute the loss. This is repeated for all multiples of the patch size 32 up to $s_{max}$ ($s_{\text{shift}}=[32, 64, 96, 128, \dots, 512]$). Mask horizon is illustrated in \autoref{fig:shift}. The maximum shift is defined as $s_{\max} = 512$ (half of the context length).
+
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.8\linewidth]{images/shift.png}
+	\caption{Mask horizon. Illustration adapted from \citeauthor{auer2025tirexzeroshotforecastinglong}~\cite{auer2025tirexzeroshotforecastinglong}}
+	\label{fig:shift}
+\end{figure}
+
+\subsubsection{xLSTM vs. LSTM}
+\label{sec:xlstm_vs_lstm}
+
+An additional point of interest is the effect of replacing the xLSTM layer (\citeauthor{beck2024xlstmextendedlongshortterm}~\cite{beck2024xlstmextendedlongshortterm}) with a LSTM layer (\citeauthor{LSTM}~\cite{LSTM}), while keeping the rest of the architecture unchanged. xLSTM introduced two new variants, the mLSTM and sLSTM cell (\citeauthor{beck2024xlstmextendedlongshortterm}~\cite{beck2024xlstmextendedlongshortterm}). For TiRex and the custom implementation only the sLSTM cell is used. The sLSTM cell replaces the activations at the input and forget gate with exponential functions and introduces additional stabilization and normalization mechanisms to handle the large values from exponential activations.
+
+
+\section{Results}
+\label{sec:results}
+
+This section presents the results of the experiments described in \autoref{sec:methods}. \autoref{tab:scores_custom_tirex_full} shows the scores for the models trained on the dataset of 72 series, and \autoref{tab:scores_custom_tirex_single} shows the scores for the custom TiRex model and the fine-tuned TiRex model trained on a single sequence. Comparing SMAPE scores within each individual group, the L1 loss performs better in the custom TiRex model, while the quantile loss performs worst and the MSE loss slightly behind the L1 loss. One possible explanation is that the quantile loss requires the model to learn across all quantiles simultaneously, rather than concentrating on a single target value. Time series forecasting might benefit from simpler loss types. This effect is not noticeable in the fine-tuned version of TiRex. In this setting all losses achieve a similar score but improving the results compared to the original pre-trained version.  
+
+
+\begin{table}[htbp]
+	\centering
+	\begin{threeparttable}
+		\caption{Evaluation scores (big dataset)}
+		\label{tab:scores_custom_tirex_full}
+		\setlength{\tabcolsep}{3pt}
+		\begin{tabular}{lllcccc}
+			\toprule
+			& & & \multicolumn{2}{c}{\textbf{SMAPE Score}} & \multicolumn{2}{c}{\textbf{Quantile Score}} \\
+			\cmidrule(lr){4-5} \cmidrule(lr){6-7}
+			\textbf{Dataloader} & \textbf{Layer} & \textbf{Loss} & \textbf{Autoregressive} & \textbf{Original} & \textbf{Autoregressive} & \textbf{Original} \\
+			\midrule
+			\multicolumn{7}{l}{{\small \emph{Custom TiRex model}}}\\
+			cpm & lstm & l1         & \cellcolor[HTML]{fdfebc}0.4591 $\pm$ 0.0168 & 0.4819 $\pm$ 0.0052 & -  & -  \\
+			cpm & lstm & mse        & \cellcolor[HTML]{fdfebc}0.5289 $\pm$ 0.0067 & 0.5675 $\pm$ 0.0074 & -  & -  \\
+			cpm & lstm & quantile   & \cellcolor[HTML]{fdfebc}0.7024 $\pm$ 0.0066 & 0.7132 $\pm$ 0.0130 & 894.47 $\pm$ 7.77 & 897.51 $\pm$ 11.32 \\
+			\addlinespace
+			cpm & slstm & l1        & \cellcolor[HTML]{fdfebc}0.4430 $\pm$ 0.0092 & 0.4529 $\pm$ 0.0087 & -  & -  \\
+			cpm & slstm & mse       & \cellcolor[HTML]{fdfebc}0.5337 $\pm$ 0.0063 & 0.5535 $\pm$ 0.0077 & -  & -  \\
+			cpm & slstm & quantile  & \cellcolor[HTML]{fdfebc}0.7032 $\pm$ 0.0072	 & 0.7115 $\pm$ 0.0061 & 888.68 $\pm$ 6.16 & 913.33 $\pm$ 9.44 \\
+			\addlinespace
+			MH & lstm & l1       & 0.4638 $\pm$ 0.0108 & \cellcolor[HTML]{fdfebc}0.4619 $\pm$ 0.0043 & - & - \\
+			MH & lstm & mse      & 0.5646 $\pm$ 0.0045 & \cellcolor[HTML]{fdfebc}0.5579 $\pm$ 0.0063 & -  & -  \\
+			MH & lstm & quantile & \cellcolor[HTML]{fdfebc}0.7068 $\pm$ 0.0063 & 0.7170 $\pm$ 0.0037 & 897.45 $\pm$ 12.20 & 910.49 $\pm$ 10.93 \\
+			\addlinespace
+			MH & slstm & l1      & 0.4756 $\pm$ 0.0273 & \cellcolor[HTML]{fdfebc}0.4497 $\pm$ 0.0089 & - & - \\
+			MH & slstm & mse     & 0.5975 $\pm$ 0.0230 & \cellcolor[HTML]{fdfebc}0.5846 $\pm$ 0.0258 & - & - \\
+			MH & slstm & quantile & \cellcolor[HTML]{fdfebc}0.7176 $\pm$ 0.0152 & 0.7276 $\pm$ 0.0092 & 906.54 $\pm$ 9.95 & 938.39 $\pm$ 13.30 \\
+			\midrule
+			\multicolumn{7}{l}{{\small \emph{Original pre-trained TiRex model}}}\\
+			TiRex & slstm & quantile  & 0.4088 & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}0.4042 & 445.70  & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1} 354.85  \\
+			\bottomrule
+		\end{tabular}
+		\begin{tablenotes}
+			\small
+			\item[a] Mean $\pm$ std across 5 independent runs.
+			\item[b] Lower scores indicate better predictive performance across both metrics. Best score overall is marked in green and best score for each variant is marked in yellow.
+		\end{tablenotes}	
+	\end{threeparttable}
+\end{table}
+
+\begin{table}[htbp]
+	\centering
+	\begin{threeparttable}
+		\caption{Evaluation scores (single sequence)}
+		\label{tab:scores_custom_tirex_single}
+		\setlength{\tabcolsep}{3pt}
+		\begin{tabular}{lllcccc}
+			\toprule
+			& & & \multicolumn{2}{c}{\textbf{SMAPE Score}} & \multicolumn{2}{c}{\textbf{Quantile Score}} \\
+			\cmidrule(lr){4-5} \cmidrule(lr){6-7}
+			\textbf{Dataloader} & \textbf{Layer} & \textbf{Loss} & \textbf{Autoregressive} & \textbf{Original} & \textbf{Autoregressive} & \textbf{Original} \\
+			\midrule
+			\multicolumn{7}{l}{{\small \emph{Custom TiRex model}}}\\
+			MH & lstm & l1       & 0.0245 $\pm$ 0.0003 & \cellcolor[HTML]{fdfebc}0.0231 $\pm$ 0.0004 & - & - \\
+			MH & lstm & mse      & 0.0236 $\pm$ 0.0003 & \cellcolor[HTML]{fdfebc}0.0223 $\pm$ 0.0003 & -  & -  \\
+			MH & lstm & quantile & 0.1347 $\pm$ 0.0006 & \cellcolor[HTML]{fdfebc}0.1344 $\pm$ 0.0004 & 3556 $\pm$ 16.74 & 3545 $\pm$ 11.07 \\
+			\addlinespace
+			MH & slstm & l1      & 0.0277 $\pm$ 0.0006 & \cellcolor[HTML]{fdfebc}0.0268 $\pm$ 0.0004 & - & - \\
+			MH & slstm & mse     & 0.0281 $\pm$ 0.0004 & \cellcolor[HTML]{fdfebc}0.0267 $\pm$ 0.0003 & - & - \\
+			MH & slstm & quantile & 0.1356 $\pm$ 0.0014 & \cellcolor[HTML]{fdfebc}0.1355 $\pm$ 0.0006 & 3579 $\pm$ 40.79 & 3579 $\pm$ 15.82 \\
+			\midrule
+			\multicolumn{7}{l}{{\small \emph{Fine-tuned pre-trained TiRex model}}}\\
+			TiRex Or. & slstm & l1       & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}0.0217 $\pm$ 0.0002 & 0.0218 $\pm$ 0.0002 & - & - \\
+			TiRex Or. & slstm & mse      & \cellcolor[HTML]{fdfebc}0.0224 $\pm$ 0.0002 & \cellcolor[HTML]{fdfebc}0.0224 $\pm$ 0.0002	 & -  & -  \\
+			TiRex Or. & slstm & quantile & \cellcolor[HTML]{fdfebc}0.0218 $\pm$ 0.0005 & \cellcolor[HTML]{fdfebc}0.0218 $\pm$ 0.0005 & 485.70 $\pm$ 15.40 & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}467.15 $\pm$ 14.84 \\
+			\addlinespace
+			TiRex Auto. & slstm & l1      & \cellcolor[HTML]{fdfebc}0.0218 $\pm$ 0.0003 & 0.0249 $\pm$ 0.0009 & - & - \\
+			TiRex Auto. & slstm & mse     & \cellcolor[HTML]{fdfebc}0.0219 $\pm$ 0.0003 & 0.0243 $\pm$ 0.0004 & - & - \\
+			TiRex Auto. & slstm & quantile & \cellcolor[HTML]{fdfebc}0.0221 $\pm$ 0.0003 & 0.0234 $\pm$ 0.0003 & 472.57 $\pm$ 14.14 & 501.26 $\pm$ 11.58 \\			
+			\midrule
+			\multicolumn{7}{l}{{\small \emph{Original pre-trained TiRex model}}}\\
+			TiRex & slstm & quantile  & 0.0350 & \cellcolor[HTML]{fdfebc}0.0338 & 770.29  &  710.96  \\
+			\bottomrule
+		\end{tabular}
+		\begin{tablenotes}
+			\small
+			\item[a] Mean $\pm$ std across 5 independent runs.
+			\item[b] Lower scores indicate better predictive performance across both metrics. Best score overall is marked in green and best score for each variant is marked in yellow.
+		\end{tablenotes}	
+	\end{threeparttable}
+\end{table}
+
+
+\subsection{Metrics}
+\label{sec:metrics}
+
+Two main metrics are used to compare the different methods and experiments: the symmetric mean absolute percentage error (sMAPE) and the quantile loss. The sMAPE uses only the 50\% (median) quantile of the model output to score against the target values, while the quantile loss uses all quantile predictions. For methods that do not produce quantile predictions, only the sMAPE is used.
+
+\subsubsection{sMAPE}
+\label{sec:smape}
+As a general score the symmetric mean absolute percentage error (sMAPE) is used. The original definition from \citeauthor{armstrong1985long}~\cite{armstrong1985long} is slightly adapted and is defined as:
+\begin{align}
+	\text{SMAPE} &= \dfrac{2}{n} \sum_{t=1}^{n} \dfrac{|F_t - A_t|}{|A_t| + |F_t|}
+	\label{eq:smape}
+\end{align}
+where $t$ is the timestep, $A_t$ the actual values and $F_t$ the forecasted values, which in our case is either the model prediction for a single output value or the median of the quantile predictions. The advantage of the symmetric version is that it avoids exploding values when the actuals are close to zero and it treats over- and under-forecasts in a relative, symmetric way.
+
+\subsubsection{Quantile Loss}
+\label{sec:quantile_loss}
+In addition to sMAPE, the quantile (pinball) loss is used to measure the quality of the individual quantile predictions. For a given quantile level $q \in Q$ and time step $t$, the quantile loss is computed using the same piecewise formulation as in Equation~\ref{eq:quantile_loss}. The overall quantile loss reported for evaluation is obtained by averaging this loss over the forecast horizon $t = 1,\ldots,h$ and all evaluated quantile levels $q \in Q$.
+
+
+\subsection{Autoregressive}
+\label{sec:autoregressive_results}
+
+As shown in \autoref{tab:scores_custom_tirex_full}, the autoregressive method scores slightly better in most experiments. Only the original pre-trained TiRex model scores better with its original NaN-filling behavior (inserting missing values into the shifted context instead of the median prediction) for multi-patch prediction. But when trained on a single series this effect shifted in favor of the original NaN-filling behavior. Overall, \autoref{tab:scores_custom_tirex_single} shows better performance for the custom TiRex model. It is also noticeable that when the pre-trained model is trained in an autoregressive way, only the autoregressive predictions can keep up with the original prediction method.
+
+As shown in \autoref{fig:autoregressive_compare}, especially for a very long horizon that exceeds the model's context length, the autoregressive behavior still produces values that fit the ground truth well. The original behavior, in contrast, suffers from the problem that for long horizons, known past values are gradually shifted out of the model's context until only null values remain. The autoregressive behavior, on the other hand, suffers from quantile collapse: as shown in \autoref{fig:autoregressive_compare_short}, after the second patch (timestep $>$ 32), once predictions from the previous step become part of the context, the quantiles get noticeably worse compared to the original behavior. And the effect becomes noticeably worse as the forecast horizon increases.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=1.0\linewidth]{images/autoreg_compare.png}
+	\caption{Comparison of autoregressive behavior vs. nan-filling method.}
+	\label{fig:autoregressive_compare}
+\end{figure}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=1.0\linewidth]{images/autoreg_compare_short.png}
+	\caption{Comparison of autoregressive behavior vs. nan-filling method. On horizon $h=192$.}
+	\label{fig:autoregressive_compare_short}
+\end{figure}
+
+\subsection{CPM}
+\label{sec:cpm_results}
+CPM has a large impact on training and clearly improves model performance: all CPM scores in \autoref{tab:scores_custom_tirex_full} are better than those of mask horizon. The models evidently learn better when trained with randomly scattered masked patches (CPM) than with a single, large masked block near the end of the sequence (MH). It appears that MH removes too much information from the context at once, making the task considerably harder to learn from. This was also noticeable during training that CPM improves the training loss and the deviation across multiple runs is much smaller, making it easier to find the best model.
+
+\subsection{xLSTM vs. LSTM}
+\label{sec:xlstm_vs_lstm_results}
+Interestingly, in both \autoref{tab:scores_custom_tirex_full} and \autoref{tab:scores_custom_tirex_single}, the LSTM layer performs slightly better than the sLSTM layer in most variants. This could also be a training-related artifact, since the same hyperparameters were used for both variants and may not be equally well suited to each; alternatively, the LSTM layer may simply be easier to train than the sLSTM layer in this setting.
+
+\subsection{Best vs. Last Test Loss}
+\label{sec:best_vs_last_results}
+In general, only the model checkpoint with the best evaluation loss is used for scoring the model. However, since all models are trained for the full 100 epochs, scores for the fully trained (last-epoch) models are also available and are shown in \autoref{tab:scores_custom_tirex_best_last}. These results show that it is generally better to use the checkpoint with the best test loss. Interestingly, they also show that quantile predictions tend to improve the longer the model is trained. A somewhat counterintuitive result that would benefit from further investigation.
+
+\begin{table}[htbp]
+	\centering
+	\begin{threeparttable}
+		\caption{Evaluation scores (big dataset), Best vs. Last Test Loss}
+		\label{tab:scores_custom_tirex_best_last}
+		\setlength{\tabcolsep}{3pt}
+		\begin{tabular}{lllcccc}
+			\toprule
+			& & & \multicolumn{2}{c}{\textbf{SMAPE Score}} & \multicolumn{2}{c}{\textbf{Quantile Score}} \\
+			\cmidrule(lr){4-5} \cmidrule(lr){6-7}
+			\textbf{Dataloader} & \textbf{Layer} & \textbf{Loss} & \textbf{Best} & \textbf{Last} & \textbf{Best} & \textbf{Last} \\
+			\midrule
+			\multicolumn{7}{l}{{\small \emph{Custom TiRex model}}}\\
+			cpm & lstm & l1         & \cellcolor[HTML]{fdfebc}0.4819 $\pm$ 0.0052 & 0.4952 $\pm$ 0.0038 & -  & -  \\
+			cpm & lstm & mse        & \cellcolor[HTML]{fdfebc}0.5675 $\pm$ 0.0074 & 0.5908 $\pm$ 0.0047 & -  & -  \\
+			cpm & lstm & quantile   & 0.7132 $\pm$ 0.0130 & \cellcolor[HTML]{fdfebc}0.6949 $\pm$ 0.0024 & 897.51 $\pm$ 11.32 & \cellcolor[HTML]{fdfebc}872.84 $\pm$ 4.31 \\
+			\addlinespace
+			cpm & slstm & l1        & \cellcolor[HTML]{fdfebc}0.4529 $\pm$ 0.0087 & 0.4672 $\pm$ 0.0171 & -  & -  \\
+			cpm & slstm & mse       & \cellcolor[HTML]{fdfebc}0.5535 $\pm$ 0.0077 & 0.5654 $\pm$ 0.0183 & -  & -  \\
+			cpm & slstm & quantile  & \cellcolor[HTML]{fdfebc}0.7115 $\pm$ 0.0061 & 0.7173 $\pm$ 0.0150 & 913.33 $\pm$ 9.44 & \cellcolor[HTML]{fdfebc}907.46 $\pm$ 10.00 \\
+			\addlinespace
+			MH & lstm & l1       & \cellcolor[HTML]{fdfebc}0.4619 $\pm$ 0.0043 & 0.4794 $\pm$ 0.0036 & - & - \\
+			MH & lstm & mse      & \cellcolor[HTML]{fdfebc}0.5579 $\pm$ 0.0063 & 0.5609 $\pm$ 0.0055 & -  & -  \\
+			MH & lstm & quantile & 0.7170 $\pm$ 0.0037 & \cellcolor[HTML]{fdfebc}0.7105 $\pm$ 0.0045 & 910.49 $\pm$ 10.93 & \cellcolor[HTML]{fdfebc}901.63 $\pm$ 6.25 \\
+			\addlinespace
+			MH & slstm & l1      & \cellcolor[HTML]{fdfebc}0.4497 $\pm$ 0.0089 & 0.4777 $\pm$ 0.0152 & - & - \\
+			MH & slstm & mse     & \cellcolor[HTML]{fdfebc}0.5846 $\pm$ 0.0258 & 0.6030 $\pm$ 0.0289 & - & - \\
+			MH & slstm & quantile & \cellcolor[HTML]{fdfebc}0.7276 $\pm$ 0.0092 & 0.7281 $\pm$ 0.0240 & \cellcolor[HTML]{fdfebc}938.39 $\pm$ 13.30 & 941.42 $\pm$ 19.79 \\
+			\bottomrule
+		\end{tabular}
+		\begin{tablenotes}
+			\small
+			\item[a] Mean $\pm$ std across 5 independent runs.
+			\item[b] Lower scores indicate better predictive performance across both metrics.
+			\item[c] Only scores from original multi-patch prediction behavior are shown.
+		\end{tablenotes}	
+	\end{threeparttable}
+\end{table}
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+This work explored several modifications to the TiRex time series foundation model, covering the choice of loss function, the forecast generation strategy, a strongly parameter-reduced custom model, the dataloader masking strategy, and the choice of recurrent layer.
+
+Across all experiments for the custom TiRex model, L1 loss consistently produced the best SMAPE scores, while quantile loss consistently performed worst, likely because it requires the model to fit an entire predictive distribution rather than a single target value. Switching from the original NaN-filling multi-patch generation to autoregressive generation improved performance in most settings, specially using CPM as training method, and was particularly beneficial for forecast horizons exceeding the model's context length, where the original method degrades as known values are pushed out of context. This benefit came at the cost of quantile collapse over successive autoregressive steps. A combination of both methods could benefit the predictions, specially if the horizon is long. For shorter horizons, the standard multi-patch generation could be used, and after a certain forecast horizon is reached, the model could switch to autoregressive generation.
+
+For the training data strategy, Contiguous Patch Masking (CPM) clearly outperformed the simpler Mask Horizon (MH), suggesting that exposing the model to many small, randomly distributed masked regions during training is more effective than masking a single large block. Replacing the xLSTM layer with a standard LSTM layer led to a small but consistent improvement, though this may be an artifact of using identical hyperparameters for both variants rather than a general property of the two layer types. This should be further investigated.
+
+Finally, comparing checkpoints selected by best versus last test loss confirmed that early stopping on test loss is generally the right choice, but also revealed that quantile calibration keeps improving with additional training, suggesting that validation loss and quantile quality do not always improve together.
+
+The strongly parameter-reduced custom TiRex model (1.6 million parameters) could not match the performance of the original 35-million-parameter pre-trained model on quantile predictions. Nevertheless, the results demonstrate that a much smaller model, trained with a suitable masking strategy and loss function, can still learn meaningful forecasting behavior on time series, which is encouraging for applications where computational resources are constrained. Also, fine-tuning the foundation model on a single setting or sequence is the right choice if more precise results are necessary. 
+
+Several topics remain open for future work. First, the hyperparameters used for the LSTM/sLSTM comparison and for the custom model in general were not individually tuned; a dedicated hyperparameter search per configuration could clarify whether the observed differences reflect genuine architectural properties or training artifacts. Second, the quantile collapse observed under autoregressive generation warrants further investigation, for example by combining autoregressive point-forecast generation with the original quantile head, or by exploring hybrid generation strategies. Third, scaling up the custom model and the amount of training data, currently limited by computational resources, could help establish where the performance gap to the full pre-trained model narrows. Finally, evaluating the fine-tuned and custom models on time series outside the training distribution would help assess how well the findings of this work generalize.
+
+Final note: During the course of this work, an improved version of the TiRex foundation model, TiRex-2 (\citeauthor{podest2026tirex2generalizingtirexmultivariate}~\cite{podest2026tirex2generalizingtirexmultivariate}), was released. TiRex-2 supports multivariate forecasting with past and future-known covariates, provides streaming capabilities, and achieves improved forecasting performance. Since it became available only after the experiments presented in this work had been completed, it was not included in the evaluation.
+
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Print the bibliography
+%% 
+%% (Optionally) let the bibliography start on a new odd page (odd is only relevant in twoside layout)
+%\cleardoubleoddpage
+\printbibliography
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Begin with the appendix part (all further sections will be appendices)
+\appendix
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%% Add your appendix sections ...
+%% 
+
+%% Make sure to start the appendix on a new odd page (odd is only relevant in twoside layout)
+%\cleardoubleoddpage
+\section{An Appendix}
+\label{app:an-appendix}
+
+\subsection{Train and Validation Losses, Fine-tuning pre-trained model on single sequence}
+\label{sec:losses_tirex_single}
+
+Train and Validation losses are visible in \autoref{tab:losses_tirex_single} and \autoref{fig:losses_tirex_single}.
+
+\begin{table}[htbp]
+	\centering
+	\begin{threeparttable}
+		\caption{Train Losses - Pre-trained TiRex (single sequence)}
+		\label{tab:losses_tirex_single}
+		\setlength{\tabcolsep}{3pt}
+		\begin{tabular}{lllrr}
+			\toprule
+			\textbf{Dataloader} & \textbf{Layer} & \textbf{Loss} &
+			\textbf{Best Train Loss} & \textbf{Best Validation Loss}\\
+			\midrule
+			
+			TiRex Original & slstm & quantile &
+			\cellcolor[HTML]{006837}\color[HTML]{f1f1f1}200.12 $\pm$ 3.28 &
+			409.94 $\pm$ 4.34 \\
+			
+			TiRex Autoregressive & slstm & quantile &
+			218.08 $\pm$ 3.68 & 
+			\cellcolor[HTML]{006837}\color[HTML]{f1f1f1}404.46 $\pm$ 5.41	 \\
+			
+			\midrule
+			
+			TiRex Original & slstm & mse &
+			\cellcolor[HTML]{006837}\color[HTML]{f1f1f1}506,763 $\pm$ 28,471 &
+			2,048,799 $\pm$ 36,625 \\
+			
+			TiRex Autoregressive & slstm & mse &
+			725,797 $\pm$ 38,896 & 
+			\cellcolor[HTML]{006837}\color[HTML]{f1f1f1}2,029,340 $\pm$ 127,107 \\
+			
+			\midrule
+			
+			TiRex Original & slstm & l1 &
+			\cellcolor[HTML]{006837}\color[HTML]{f1f1f1}576.12 $\pm$ 18.21 &
+			1,031.99 $\pm$ 10.82	 \\
+			
+			TiRex Autoregressive & slstm & l1 &
+			594.73 $\pm$ 9.14 & 
+			\cellcolor[HTML]{006837}\color[HTML]{f1f1f1}1,005.34 $\pm$ 16.54 \\
+			
+			\bottomrule
+		\end{tabular}
+		
+		\begin{tablenotes}
+			\small
+			\item[a] Mean $\pm$ std across runs (lower loss is better).
+			\item[b] Each configuration was trained for 15 epochs in each of 5 independent runs.
+		\end{tablenotes}
+	\end{threeparttable}
+\end{table}
+
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=1.1\linewidth]{images/loss_pretrain_single.png}
+	\caption{Train Losses - Pre-trained TiRex (single sequence)}
+	\label{fig:losses_tirex_single}
+\end{figure}
+
+\subsection{Train and Validation Losses, Custom TiRex on big dataset}
+\label{sec:losses_custom_tirex_full}
+
+Train and Validation losses are visible in \autoref{tab:losses_custom_tirex_full} and \autoref{fig:losses_custom_tirex_full}.
+We see more stable results when training with CPM and an LSTM layer. It seems xLSTM has high variance due to exponential activations, and multiple runs are necessary to find the best model. 
+
+\begin{table}[htbp]
+	\centering
+	\begin{threeparttable}
+		\caption{Train Losses - Custom TiRex (big dataset)}
+		\label{tab:losses_custom_tirex_full}
+		\setlength{\tabcolsep}{3pt}
+		\begin{tabular}{lllrr}
+			\toprule
+			\textbf{Dataloader} & \textbf{Layer} & \textbf{Loss} & \textbf{Best Train Loss} & \textbf{Best Validation Loss}\\
+			\midrule
+			MH & slstm & quantile  & 188.29 $\pm$ 109.07 & 384.48 $\pm$ 160.34 \\
+			MH & lstm  & quantile  & 52.07 $\pm$ 0.89 & 272.01 $\pm$ 3.83 \\
+			cpm & slstm    & quantile  & 99.30 $\pm$ 42.51 & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}150.57 $\pm$ 3.91 \\
+			cpm & lstm     & quantile  & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}40.64 $\pm$ 0.36 & 151.89 $\pm$ 2.35 \\
+			\midrule
+			MH & slstm & mse       & 1,562,264 $\pm$ 2,098,276 & 6,531,559 $\pm$ 3,209,992 \\
+			MH & lstm  & mse       & 129,727 $\pm$ 11,360 & 4,049,305 $\pm$ 193,178  \\
+			cpm & slstm    & mse       & 398,419 $\pm$ 341,756 & 2,087,947 $\pm$ 1,024,723  \\
+			cpm & lstm      & mse      & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}53,482 $\pm$ 1,821 & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}1,567,425 $\pm$ 43,922 \\
+			\midrule
+			MH & slstm & l1        & 518.86 $\pm$ 194.98 & 759.81 $\pm$ 206.19  \\
+			MH & lstm  & l1        & 155.81 $\pm$ 6.42 & 689.08 $\pm$ 18.21  \\
+			cpm & slstm    & l1        & 223.88 $\pm$ 83.65 & 453.50 $\pm$ 155.78 \\
+			cpm & lstm     & l1        & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}111.46 $\pm$ 0.56 & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}385.33 $\pm$ 4.22	 \\
+			\bottomrule
+		\end{tabular}
+		\begin{tablenotes}
+			\small
+			\item[a] Mean $\pm$ std across runs (lower loss is better).
+			\item[b] Each configuration was trained for 100 epochs in each of 5 independent runs.
+		\end{tablenotes}
+	\end{threeparttable}		
+\end{table}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=1.1\linewidth]{images/loss_custom_full.png}
+	\caption{Train Losses - Custom TiRex (big dataset)}
+	\label{fig:losses_custom_tirex_full}
+\end{figure}
+
+
+\subsection{Train and Validation Losses, Custom TiRex on single sequence}
+\label{sec:losses_custom_tirex_single}
+
+Train and Validation losses are visible in \autoref{tab:losses_custom_tirex_single} and \autoref{fig:losses_custom_tirex_single}.
+
+\begin{table}[htbp]
+	\centering
+	\begin{threeparttable}
+		\caption{Train Losses - Custom TiRex (single sequence)}
+		\label{tab:losses_custom_tirex_single}
+		\setlength{\tabcolsep}{3pt}
+		\begin{tabular}{lllrr}
+			\toprule
+			\textbf{Dataloader} & \textbf{Layer} & \textbf{Loss} &  \textbf{Best Train Loss} & \textbf{Best Validation Loss}\\
+			\midrule
+			MH & slstm & quantile  & 543.71 $\pm$ 7.83 & 612.24 $\pm$ 6.96 \\
+			MH & lstm  & quantile  & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}399.73 $\pm$ 3.77 & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}545.44 $\pm$ 4.27 \\
+			\midrule
+			MH & slstm & mse       & 3,483,126.45 $\pm$ 72,156.17 & 4,867,615 $\pm$ 16,038 \\
+			MH & lstm  & mse       & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}1,219,947 $\pm$ 69,377.99 & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}3,730,064$\pm$ 200,138  \\
+			\midrule
+			MH & slstm & l1       & 1,326.44 $\pm$ 17.14 & 1,551.57 $\pm$ 20.72  \\
+			MH & lstm  & l1        & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}1,009.09 $\pm$ 31.85 & \cellcolor[HTML]{006837}\color[HTML]{f1f1f1}1,460.09 $\pm$ 39.63  \\
+			\bottomrule
+		\end{tabular}
+		\begin{tablenotes}
+			\small
+			\item[a] Mean $\pm$ std across runs (lower loss is better).
+			\item[b] Each configuration was trained for 100 epochs in each of 5 independent runs.
+		\end{tablenotes}
+	\end{threeparttable}		
+\end{table}
+
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=1.1\linewidth]{images/loss_custom_single.png}
+	\caption{Train Losses - Custom TiRex (single sequence)}
+	\label{fig:losses_custom_tirex_single}
+\end{figure}
+
+
+
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\cleardoubleoddpage
+
+\end{document}
+\endinput
