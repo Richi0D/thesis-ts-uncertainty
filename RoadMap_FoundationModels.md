@@ -183,8 +183,14 @@ You should understand:
 
 ------------------------------------------------------------------------
 
-# 3. Transformer foundations to implement first
+# 3. Transformer and LSTM foundations to implement first
 
+## LSTM
+
+Create a simple LSTM Model as basis model.
+
+
+## Transformer
 Before Chronos-2, build a tiny Transformer yourself.
 
 Do not use `nn.Transformer` for the first version.

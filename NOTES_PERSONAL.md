@@ -2,6 +2,12 @@
 
 ## Starting Tasks
 
+1. create simple syntethic data generator for tests
+2. LSTM and Transformer foundation
+   1. Build small basic models. This is our basis.
+3. 
+
+
 - Literature research: read and organize relevant papers.
 - Study different time series models:
   - TiRex-2,
