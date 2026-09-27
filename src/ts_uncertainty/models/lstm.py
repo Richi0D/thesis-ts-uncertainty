@@ -11,8 +11,8 @@ class MyLSTM(nn.Module):
         # stacked weight matrices for input and hidden states, order: i, f, z, o
         self.weight_ih = nn.Parameter(torch.empty(4 * hidden_size, input_size))
         self.weight_hh = nn.Parameter(torch.empty(4 * hidden_size, hidden_size))
-        self.bias_ih = nn.Parameter(torch.empty(4 * hidden_size))
-        self.bias_hh = nn.Parameter(torch.empty(4 * hidden_size))
+        self.bias_ih = nn.Parameter(torch.zeros(4 * hidden_size))
+        self.bias_hh = nn.Parameter(torch.zeros(4 * hidden_size))
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
 
@@ -58,7 +58,7 @@ class MyLSTM(nn.Module):
 
 
 class LSTM_Model(nn.Module):
-    def __init__(self, input_size, hidden_size, horizon_length, target_size, use_torch=True, init_constant=False):
+    def __init__(self, input_size:int, hidden_size:int, horizon_length:int, target_size:int, use_torch:bool=True, init_constant:bool=False):
         super().__init__()
         self.init_constant = init_constant
         self.target_size = target_size
@@ -80,7 +80,7 @@ class LSTM_Model(nn.Module):
                 else:
                     nn.init.xavier_uniform_(p)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         # x: (batch, seq_len, input_size)                 
         output, (h_n, c_n) = self.lstm(x)
         h_state = self.head(output[:, -1])
