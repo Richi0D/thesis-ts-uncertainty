@@ -21,6 +21,7 @@ dependencies = [
     "anywidget",
     "vl-convert-python>=1.9.0",
     "pyarrow>=24.0.0",
+    "chronos-forecasting",
 ]
 
 
