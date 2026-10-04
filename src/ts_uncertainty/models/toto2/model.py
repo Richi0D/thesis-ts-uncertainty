@@ -18,7 +18,7 @@ class Toto2Output:
     scale: torch.Tensor          # [B, V, 1]
 
 
-class Toto2Model(nn.Module):
+class MyToto2Model(nn.Module):
     def __init__(self,
                  num_layers:int,
                  d_model: int,
