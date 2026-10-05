@@ -81,4 +81,7 @@ Shift types that need a disabled component (`noise` without noise, `amplitude` w
 
 - Source code written for this project is licensed under the [Apache License 2.0](LICENSE).
 - Thesis text, documentation, and figures are licensed under [CC BY 4.0](LICENSE-CC-BY-4.0).
-- Third-party code and datasets remain under their respective original licenses.
+- Parts of the code are adapted from third-party projects. See [NOTICE](NOTICE) for the full
+  list of attributions.
+- Datasets and pretrained weights are not part of this repository and are subject
+  to their own licenses.

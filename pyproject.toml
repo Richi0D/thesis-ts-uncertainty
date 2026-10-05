@@ -23,6 +23,7 @@ dependencies = [
     "pyarrow>=24.0.0",
     "chronos-forecasting",
     "toto-models",
+    "tirex-2",
 ]
 
 

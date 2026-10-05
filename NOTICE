@@ -1,0 +1,14 @@
+This project includes code adapted from the following projects:
+
+- Chronos (https://github.com/amazon-science/chronos-forecasting)
+  - Licensed under the Apache License, Version 2.0
+  - Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+- Datadog Toto (https://github.com/datadog/toto)
+  - Licensed under the Apache License, Version 2.0
+  - Copyright [2005-Present] Datadog, Inc.
+  - This product includes software developed at Datadog (https://www.datadoghq.com/).
+
+- Tirex-2 (https://github.com/NX-AI/tirex-2)
+  - Licensed under the Apache License, Version 2.0
+  - Copyright 2026 NXAI GmbH
