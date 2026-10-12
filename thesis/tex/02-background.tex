@@ -48,39 +48,68 @@ To complete the notation, $D$ denotes the model dimension and $B$ the batch size
 \section{Related Work}
 \label{sec:relatedwork}
 
+This chapter reviews the development of time series forecasting from classical statistical methods to recent foundation models. These approaches can be divided into three main categories. (I) Local models such as ARIMA (\citeauthor{arima}~\cite{arima}) and exponential smoothing (\citeauthor{ets}~\cite{ets}) fit a separate set of parameters for each time series. (II) Dataset-specific global models such as DeepAR (\citeauthor{deepar}~\cite{deepar}) and N-BEATS (\citeauthor{nbeats}~\cite{nbeats}) share their parameters across all series of a dataset, but have to be retrained for every new dataset or task. (III) Zero-shot foundation models such as Chronos (\citeauthor{chronos}~\cite{chronos}), TiRex (\citeauthor{tirex1}~\cite{tirex1}) and Toto (\citeauthor{toto1}~\cite{toto1}) follow the paradigm of large language models. They are trained on a big set of data with various time series of different domains and generate forecasts for unseen sequences without requiring additional training or fine-tuning. This chapter also covers design choices which are implemented by this category of models, such as probabilistic forecasting with quantiles, patch-based input representations, learning from additional covariates and efficient streaming.
 
 
-1. Classical statistical forecasting
-ARIMA (Box & Jenkins), exponential smoothing / ETS (Hyndman et al.), Theta method.
-Point to make: local models, fitted per series, strong baselines that are still used in benchmarks. Uncertainty comes only from parametric (Gaussian) assumptions.
-2. Deep learning and global models
-RNN/LSTM (Hochreiter & Schmidhuber) as the basis.
-DeepAR (Salinas et al.): a global model trained across many series, probabilistic via a likelihood.
-N-BEATS (Oreshkin et al.), N-HiTS: pure MLP architectures with strong point forecasts.
-Point to make: the shift from per-series models to global models, which is the precondition for foundation models.
-3. Probabilistic forecasting and quantiles
-Quantile regression and pinball loss (Koenker & Bassett), MQ-RNN/MQ-CNN (Wen et al.).
-Temporal Fusion Transformer (Lim et al.). Very relevant: it combines quantile outputs with static, past-observed and known-future covariates, which is essentially your covariate taxonomy.
-Evaluation via CRPS / weighted quantile loss (Gneiting & Raftery).
-Briefly mention alternatives: parametric heads, and diffusion or flow models such as TimeGrad.
-4. Transformers and patching
-Informer, Autoformer, FEDformer as long-horizon transformers.
-DLinear (“Are Transformers Effective…”, Zeng et al.): the critique that motivated better designs.
-PatchTST (Nie et al.): patching plus channel independence. This is the origin of your $N \times P$ notation.
-iTransformer and Crossformer: attention across variates, and alternating time and variate attention in Crossformer. These are direct predecessors of the variate mixer in TiRex-2 and Chronos-2.
+\subsection{Classical Statistical Forecasting}
+\label{sec:rw_classical}
+
+Classical forecasting methods model each time series individually. ARIMA (\citeauthor{arima}~\cite{arima}) describes a series as a linear combination of its own past values and past forecast errors, after differencing to remove trends. While the classical Box-Jenkins methodology selects the model manually, Auto-ARIMA (\citeauthor{autoarima}~\cite{autoarima}) automates this selection. Exponential smoothing (\citeauthor{ets}~\cite{ets}) decompose a series into error, trend and seasonal components (state space form labeled as ETS) that are updated recursively. The Theta method (\citeauthor{theta}~\cite{theta}) decomposes a series into two $\theta$-lines: a linear trend line that is extrapolated directly and a line with amplified local curvature that is forecast with simple exponential smoothing. The final forecast is the average of both.
+
+Although deep learning models often outperform the classical approaches, they remain a strong baseline in current benchmarks. They are easy to interpret and are computationally cheap. But they are limited to single series since each time series needs its own fitting step and no knowledge is transferred between different series.   
+
+
+\subsection{Deep Learning and Global Models}
+\label{sec:rw_deep}
+
+A key shift was the move from local to global models, which share one set of parameters across multiple time series. Global models learn patterns that are shared across series and can therefore forecast series with little history. One enabler were, recurrent neural networks, specially the LSTM (\citeauthor{lstm}~\cite{lstm}), were among the first deep architectures applied to forecasting. They process a series step by step while maintaining a hidden state. DeepAR (\citeauthor{deepar}~\cite{deepar}) trains an autoregressive LSTM on a dataset and predicts the parameters of a likelihood at each step, from which forecasts are obtained by sampling. N-BEATS (\citeauthor{nbeats}~\cite{nbeats}) showed that a deep architecture of fully connected layers with residual connections can outperform statistical methods. N-HiTS (\citeauthor{nhits}~\cite{nhits}) extended this design with multi-rate sampling and hierarchical interpolation to improve long-horizon forecasting. 
+
+
+\subsection{Transformers}
+\label{sec:rw_transformers}
+
+Due to the success of the Transformer (\citeauthor{transformerbase}~\cite{transformerbase}) in natural language processing, the architecture was soon adapted to time series forecasting. Unlike recurrent networks, self-attention connects every pair of positions directly, which promises to capture long-range dependencies without the step-by-step propagation of a hidden state. The first adaptations, however, used each time step as one token, typically embedding the values of all variates at that time step together with timestamp features. Since the cost of self-attention grows quadratically with the number of tokens, long contexts and horizons quickly became expensive.
+
+The Temporal Fusion Transformer (\citeauthor{temporalfusiontransformers}~\cite{temporalfusiontransformers}) combines recurrence with attention. It expands the input space by adding static covariates, past-observed inputs that are only available up to the forecast origin, and known future inputs that are available over the horizon. The model encode past inputs and decode future inputs via a LSTM layer and adds a temporal self-attention layer. Informer (\citeauthor{informer}~\cite{informer}) restricted attention to the most informative queries (ProbSparse attention) and replaced autoregressive decoding with a decoder that predicts the whole horizon in a single forward pass, avoiding error accumulation over long horizons. Autoformer (\citeauthor{autoformer}~\cite{autoformer}) integrated a decomposition into trend and seasonal components into the architecture. FEDformer (\citeauthor{fedformer}~\cite{fedformer}) moved attention into the frequency domain and operated on a small subset of Fourier modes, reducing the complexity to linear in the sequence length. Their effectiveness was questioned by \citeauthor{dlinear}~\cite{dlinear}, who showed that a simple linear model can outperform them on common long-horizon benchmarks. This raised the question of whether attention over single time steps is a suitable representation for time series at all.
+
+
+\subsection{Patching and Probabilistic Forecasting}
+\label{sec:rw_quantiles}
+
+PatchTST (\citeauthor{patchtst}~\cite{patchtst}) addressed the issue of attention for single time steps by splitting each series into patches of length $P$ and treating every patch as one token. Patching reduces the sequence length from $T$ to $N \approx T/P$, which lowers the cost of attention, and gives each token a local context of several time steps that carries more information than a single value. Patching has since become the standard input representation of time series foundation models. In addition, PatchTST processes every variate independently with shared weights (channel independence), which proved more robust than mixing variates naively. But channel independence, ignores information shared between variates. Crossformer (\citeauthor{crossformer}~\cite{crossformer}) embeds each variate patch-wise and alternates between attention over time and attention over variates.
+
+Point forecasts do not express how uncertain a prediction is, which is essential for decision making and for downstream tasks such as anomaly detection. Quantile regression addresses this by estimating conditional quantiles directly. The $\tau$-quantile is the value that the future observation falls below with probability $\tau$, so for example the $0.1$- and $0.9$-quantiles together span an $80\%$ prediction interval. For a single target series, the quantile loss over the forecast horizon is
+\begin{equation}
+	\mathcal{L} = \frac{1}{K \cdot H} \sum_{h=1}^{H} \sum_{\tau \in \mathcal{Q}}
+	\begin{cases}
+		\tau \left(y_h - \hat{y}_h^{\tau}\right) & \text{if } \hat{y}_h^{\tau} \le y_h, \\
+		(1 - \tau) \left(\hat{y}_h^{\tau} - y_h\right) & \text{otherwise,}
+	\end{cases}
+	\label{eq:quantile_loss}
+\end{equation}
+where $y_h$ is the observed value at horizon step $h$ and $\hat{y}_h^{\tau}$ the predicted $\tau$-quantile. The loss penalises under-prediction with weight $\tau$ and over-prediction with weight $1 - \tau$, so that its minimiser is the $\tau$-quantile of the conditional distribution. For $\tau = 0.5$, it reduces to half the absolute error and yields the median.
+
+A model predicts one value per quantile level in a fixed set $\mathcal{Q}$ with $K = |\mathcal{Q}|$ levels, and the choice of this set differs between models. The Temporal Fusion Transformer (\citeauthor{temporalfusiontransformers}~\cite{temporalfusiontransformers}) uses $K = 3$ levels $\{0.1, 0.5, 0.9\}$, while TiRex-1 (\citeauthor{tirex1}~\cite{tirex1}) and TiRex-2 (\citeauthor{tirex2}~\cite{tirex2}) use $K = 9$ levels $\{0.1, 0.2, \hdots, 0.9\}$. Chronos-2 (\citeauthor{chronos2}~\cite{chronos2}) extends this to $K = 21$ levels, $\{0.01, 0.99\}$ together with $\{0.05, 0.10, \hdots, 0.95\}$ in steps of $0.05$, to better capture the tails of the distribution and thus rare events.
+
+
+
+
 5. Time series foundation models
 Lag-Llama, TimeGPT, Chronos (tokenization plus a language model), TimesFM (patched decoder), MOMENT, Timer.
 Moirai: any-variate attention, an early foundation model with native multivariate and covariate support.
 TiRex (xLSTM-based, univariate), Toto, Chronos-Bolt.
 Point to make: zero-shot forecasting, and that first-generation models were mostly univariate.
+
 6. Multivariate and covariate-aware foundation models
 Chronos-2, Toto 2.0, TiRex-2: your three models. Introduce them here only briefly, since you describe them in detail later.
 Contrast how each handles cross-variate information (group attention, variate attention, bidirectional covariates).
 Gap: little is known about how these architectures compare when implemented in a controlled setting, and how they behave at inference time.
+
 7. Recurrent architectures and efficient inference
 xLSTM (Beck et al.), including sLSTM and mLSTM. Briefly mention state-space models (Mamba) and linear attention as the same trend.
 Point to make: constant-size state, which means O(1) cost per new step, versus transformers recomputing or caching over the full context.
 Length extrapolation: models trained on a fixed context and applied to longer ones.
+
 8. Streaming / online forecasting
 Separate two meanings clearly. Online learning (FSNet, OneNet) updates weights. Streaming inference updates predictions incrementally, which is your focus.
 Gap: streaming with known future covariates is hard for bidirectional models, as your notes show. This motivates your three variants.
@@ -132,49 +161,13 @@ Gap: streaming with known future covariates is hard for bidirectional models, as
 % =====================================================================
 
 
-This chapter reviews the development of time series forecasting from classical statistical methods to recent foundation models. It follows the main design choices that the models studied in this thesis combine: global training across many series, probabilistic outputs via quantiles, patch-based input representations, cross-variate modelling of covariates, and recurrent architectures that enable efficient inference.
+
+
+
 
 % ---------------------------------------------------------------------
-\subsection{Classical Statistical Forecasting}
-\label{sec:rw_classical}
-
-Classical forecasting methods model each time series individually. ARIMA (\citeauthor{arima}~\cite{arima}) describes a series as a linear combination of its own past values and past forecast errors, after differencing to remove trends. Exponential smoothing and its state space formulation ETS (\citeauthor{ets}~\cite{ets}) decompose a series into level, trend and seasonal components that are updated recursively. The Theta method (\citeauthor{theta}~\cite{theta}) combines a damped trend with simple exponential smoothing and performed strongly in forecasting competitions.
-
-These methods are interpretable, computationally cheap and remain strong baselines in current benchmarks. However, they are \emph{local} models: their parameters are fitted separately for every series, so no knowledge is transferred between series and each new series requires its own fitting step. Uncertainty estimates are derived from parametric, usually Gaussian, error assumptions. Moreover, incorporating covariates or modelling dependencies between multiple series is limited to linear extensions.
 
 % ---------------------------------------------------------------------
-\subsection{Deep Learning and Global Models}
-\label{sec:rw_deep}
-
-Recurrent neural networks, in particular the LSTM (\citeauthor{lstm}~\cite{lstm}), were among the first deep architectures applied to forecasting, as they process a series step by step while maintaining a hidden state. A key shift was the move from local to \emph{global} models, which share one set of parameters across a large collection of series. DeepAR (\citeauthor{deepar}~\cite{deepar}) trains an autoregressive LSTM on many related series and predicts the parameters of a likelihood at each step, from which forecasts are obtained by sampling.
-
-N-BEATS (\citeauthor{nbeats}~\cite{nbeats}) showed that a deep architecture of fully connected layers with residual connections can outperform statistical methods and the winning hybrid of the M4 competition (\citeauthor{m4}~\cite{m4}) on point forecasts, without any time series specific components. N-HiTS (\citeauthor{nhits}~\cite{nhits}) extended this design with multi-rate sampling and hierarchical interpolation to improve long-horizon forecasting.
-
-Global models learn patterns that are shared across series and can therefore forecast series with little history. This property is the precondition for foundation models, which push the idea further by training a single model on large and diverse corpora and applying it to unseen series without any fitting.
-
-% ---------------------------------------------------------------------
-\subsection{Probabilistic Forecasting with Quantiles}
-\label{sec:rw_quantiles}
-
-Point forecasts do not express how uncertain a prediction is, which is essential for decision making. Instead of assuming a parametric likelihood as in DeepAR, quantile regression (\citeauthor{quantreg}~\cite{quantreg}) estimates conditional quantiles directly by minimising the pinball loss
-\begin{equation}
-	\ell_\tau(y, \hat{y}) = \max\left(\tau (y - \hat{y}),\, (\tau - 1)(y - \hat{y})\right)
-\end{equation}
-for each quantile level $\tau \in \mathcal{T}$. This approach makes no assumption about the shape of the distribution. MQ-RNN (\citeauthor{mqrnn}~\cite{mqrnn}) applied it to deep forecasting by predicting multiple quantiles for all horizon steps at once, avoiding the error accumulation of autoregressive decoding.
-
-The Temporal Fusion Transformer (\citeauthor{tft}~\cite{tft}) combines quantile outputs with an explicit treatment of different input types: static covariates, past-observed inputs that are only available up to the forecast origin, and known future inputs that are available over the horizon. This taxonomy corresponds directly to the target series, past covariates and future covariates defined in Section~\ref{sec:definition}.
-
-Probabilistic forecasts are commonly evaluated with the continuous ranked probability score (CRPS) (\citeauthor{crps}~\cite{crps}), which can be expressed as an integral of the pinball loss over all quantile levels and is therefore approximated in practice by a weighted quantile loss over a finite set of levels. Alternative probabilistic approaches, such as diffusion models (\citeauthor{timegrad}~\cite{timegrad}), can represent more complex distributions but require costly sampling at inference time. The models studied in this thesis all predict a fixed set of $K$ quantiles. % TODO: check Toto 2.0 output head (Toto uses a Student-T mixture)
-
-% ---------------------------------------------------------------------
-\subsection{Transformers and Patching}
-\label{sec:rw_patching}
-
-Following its success in natural language processing, the Transformer (\citeauthor{transformer}~\cite{transformer}) was adapted to long-horizon forecasting. Informer (\citeauthor{informer}~\cite{informer}), Autoformer (\citeauthor{autoformer}~\cite{autoformer}) and FEDformer (\citeauthor{fedformer}~\cite{fedformer}) reduced the quadratic cost of attention over individual time steps through sparse attention, series decomposition and frequency-domain operations, respectively. These models, however, were questioned by \citeauthor{dlinear}~\cite{dlinear}, who showed that a single linear layer can outperform them on common long-horizon benchmarks. This raised the question of whether attention over single time steps is a suitable representation for time series at all.
-
-PatchTST (\citeauthor{patchtst}~\cite{patchtst}) addressed this by splitting each series into patches of length $P$ and treating every patch as one token. Patching reduces the sequence length from $T$ to $N \approx T/P$, which lowers the cost of attention, and gives each token a local context of several time steps that carries more information than a single value. In addition, PatchTST processes every variate independently with shared weights (channel independence), which proved more robust than mixing variates naively. Patching has since become the standard input representation of time series foundation models, including all models studied in this thesis.
-
-Channel independence, however, ignores information shared between variates. Crossformer (\citeauthor{crossformer}~\cite{crossformer}) embeds each variate patch-wise and alternates between attention over time and attention over variates. iTransformer (\citeauthor{itransformer}~\cite{itransformer}) inverts the usual design and embeds the whole history of each variate as a single token, so that attention operates across variates. The idea of separating mixing along the time axis from mixing along the variate axis reappears in the multivariate foundation models discussed in Section~\ref{sec:rw_multivariate}.
 
 % ---------------------------------------------------------------------
 \subsection{Time Series Foundation Models}
