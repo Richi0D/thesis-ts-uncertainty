@@ -20,6 +20,8 @@ This thesis investigates whether uncertainty estimates from recurrent time serie
   - TiRex-2,
   - Chronos-2,
   - Toto 2.0,
+  - Timestral (newly released oct 2026)
+  - TimesFM-3 (newly released aug 2026, just check but not implement. weights are not fully open and restricted for commercial and production use!)
   - compare them with their predecessors, and build the theoretical background needed to understand the models.
 - Inspect the `fev-bench` implementations of these models.
 - Study TCM, TSI, autoregressive generation, and univariate generators.
