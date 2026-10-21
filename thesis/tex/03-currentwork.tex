@@ -5,8 +5,26 @@
 \label{sec:foundationmodels}
 
 
+
+
 \section{Chronos-2}
 \label{sec:foundationmodels:chronos}
+
+Chronos-2 extend its predecessor to multivariate forecasting and allows past-known and future-known covariates as additional inputs. The input series is split into past-known values $X_{p} \in \mathbb{R}^{V \times T}$ and future-known $X_{f} \in \mathbb{R}^{V \times H}$ where targets and past-known values are set to missing values. Categorical covariates are encoded either by target encoding (\citeauthor{preprocessingcategorical}~\cite{preprocessingcategorical}) for univariate targets or ordinal encoding for multivariate targets.
+
+Since input values can have any scale, all input values are scaled by standardization with an additional $\sinh^{-1}$ transformation step, which is commonly used in recent foundation models. The formula can be written as:
+\begin{equation}
+	\tilde{x} = \sinh^{-1}\left(\dfrac{x - \mu_p}{\sigma_p} \right)
+\end{equation}
+where $\mu_p$ is the mean and $\sigma_p$ the variance of past-known values. Missing values are excluded from computing $\mu_p$ and $\sigma_p$.
+The additional transformation helps to reduce the influence of outliers on the objective function. The previous iteration of Chronos used every single time step as input to the model. This changes in Chronos-2. It applies patching to the input values $X_{p}$ and $X_{f}$ with zero padding if $T$ and $H$ are not multiplies of $P$. They also concatenate two additional meta features. (I) A time index which encodes the relative position of each time step. (II) A mask for missing values. The stack of patches is then embedded via a residual network $f_{\phi}^{\text{in}}: \mathbb{R}^{3P} \to \mathbb{R}^D$, where $\phi$ denotes the model parameters. Between past and future embeddings a special \emph{REG} token is inserted which serves as separator and attention sink (\citeauthor{attentionsink}~\cite{attentionsink}).
+
+
+
+
+
+
+
 
 
 
