@@ -4,36 +4,40 @@
 \chapter{Time Series Foundation Models}
 \label{sec:foundationmodels}
 
-
+Since it was not feasible to test all current available time series foundation models, a selection had to be made. The choice was fallen on three recent models. Chronos-2 (\citeauthor{chronos2}~\cite{chronos2}), TiRex-2 (\citeauthor{tirex2}~\cite{tirex2}) and Timestral (\citeauthor{timestral}~\cite{timestral}). All three models support multivariate forecasting with additional past-known $X^{pcov}$ and future-known $X^{fcov}$ covariates. They also use patching for input processing and return quantile predictions via a quantile head. Each model has its unique feature: Chronos-2 is a encoder-only transformer that follows the design of the T5 encoder (\citeauthor{t5encoder}~\cite{t5encoder}); TiRex-2 builds on xLSTM (\citeauthor{xlstm}~\cite{xlstm}) and allows for efficient streaming with constant memory; Timestral is the most recent transformer that currently beats every other foundation model on common benchmarks and is mostly trained on synthetic data. A more detailed introduction to the three models is made in the following subchapters.
 
 
 \section{Chronos-2}
 \label{sec:foundationmodels:chronos}
 
-Chronos-2 extend its predecessor to multivariate forecasting and allows past-known and future-known covariates as additional inputs. The input series is split into past-known values $X_{p} \in \mathbb{R}^{V \times T}$ and future-known $X_{f} \in \mathbb{R}^{V \times H}$ where targets and past-known values are set to missing values. Categorical covariates are encoded either by target encoding (\citeauthor{preprocessingcategorical}~\cite{preprocessingcategorical}) for univariate targets or ordinal encoding for multivariate targets.
+Chronos-2 extend its predecessor to multivariate forecasting and allows past-known and future-known covariates as additional inputs. It adds many new techniques the first implementation was lacking such as patching, group attention and quantile predictions.
 
-Since input values can have any scale, all input values are scaled by standardization with an additional $\sinh^{-1}$ transformation step, which is commonly used in recent foundation models. The formula can be written as:
+The input series is split into past-known values $X_{p} \in \mathbb{R}^{V \times T}$ and future-known values $X_{f} \in \mathbb{R}^{V \times H}$ where targets and past-known values are set to missing values. Categorical covariates are encoded either by target encoding (\citeauthor{preprocessingcategorical}~\cite{preprocessingcategorical}) for univariate targets or ordinal encoding for multivariate targets.
+
+Since input values can have any scale, all input values are scaled by standardization with an additional $\operatorname{arcsinh}$ transformation step, which is commonly used in recent foundation models. The formula can be written as:
 \begin{equation}
-	\tilde{x} = \sinh^{-1}\left(\dfrac{x - \mu_p}{\sigma_p} \right)
+	\tilde{x} = \operatorname{arcsinh}\left(\dfrac{x - \mu_p}{\sigma_p} \right)
 \end{equation}
 where $\mu_p$ is the mean and $\sigma_p$ the variance of past-known values. Missing values are excluded from computing $\mu_p$ and $\sigma_p$.
-The additional transformation helps to reduce the influence of outliers on the objective function. The previous iteration of Chronos used every single time step as input to the model. This changes in Chronos-2. It applies patching to the input values $X_{p}$ and $X_{f}$ with zero padding if $T$ and $H$ are not multiplies of $P$. They also concatenate two additional meta features. (I) A time index which encodes the relative position of each time step. (II) A mask for missing values. The stack of patches is then embedded via a residual network $f_{\phi}^{\text{in}}: \mathbb{R}^{3P} \to \mathbb{R}^D$, where $\phi$ denotes the model parameters. Between past and future embeddings a special \emph{REG} token is inserted which serves as separator and attention sink (\citeauthor{attentionsink}~\cite{attentionsink}).
+The additional transformation helps to reduce the influence of outliers on the objective function. The previous iteration of Chronos used every single time step as input to the model. This changes in Chronos-2. It applies patching to the input values $X_{p}$ and $X_{f}$ with zero padding if $T$ and $H$ are not multiplies of $P$. They also concatenate two additional meta features. (I) A time index which encodes the relative position of each time step. (II) A mask for missing values. The stack of patches is then embedded via a residual network $f_{\phi}^{\text{in}}: \mathbb{R}^{3P} \to \mathbb{R}^D$, where $\phi$ denotes the model parameters. Between past and future embeddings a special \emph{REG} token is inserted which serves as separator and attention sink (\citeauthor{attentionsink}~\cite{attentionsink}). The full embedded input is then feed into a transformer stack.
 
+The transformer stack only uses an encoder and follows the design of the T5 encoder (\citeauthor{t5encoder}~\cite{t5encoder}). The original published model has 12 layers where outputs of on layer are feed back to the next layer as input and consists of three parts: Time Attention, Group Attention and a Feed-Forward Network. The time attention layer applies self-attention on the time axis. It uses rotary position embeddings (RoPE) (\citeauthor{rotarypositions}~\cite{rotarypositions}) for the relative position embeddings. The group attention layer enables learning from other time series and makes use of future and past covariates. It aggregates information across time series that belong to the same group for a given patch. The group IDs given to each time series inside a batch depends on the forecast task. For univariate forecasting each time series gets a unique id. For multivariate forecasting each time series share the same group id. And for forecasting with covariates, each series also share the same group id. Based on this group IDs a group mask is created which makes sure aggregation happens only within the same group. After time attention and group attention the input is passed through a feed-forward network.
 
-
-
-
-
-
-
+Finally, the outputs of the transformer stack are then passed through a residual network that produces the quantile forecast $\hat{Y} \in \mathbb{R}^{H \times V^{tgt} \times K}$ and then rescaled back to the original scale.   
 
 
 \section{TiRex-2}
 \label{sec:foundationmodels:tirex}
 
-Space for your introduction.
-A typical introduction consists of a motivation for your thesis, your objectives, your research approach, and finishes with an outlook over your work.
-Of course, different structuring and naming of sections is possible.
+As Chronos-2, TiRex-2 extend its predecessor to multivariate forecasting and allows past-known and future-known covariates as additional inputs. While TiRex only uses sLSTM layers from the xLSTM architecture, TiRex-2 uses both sLSTM and mLSTM layers and uses synthetic multivariate data for training which is generated by synthetic multivariate coupling.
+
+The extended inputs $X \in \mathbb{R}^{V \times (T+H)}$ for TiRex-2 are preprocessed in three steps: scaling, patching and embedding. The predecessor used standard $z$-score normalization. TiRex-2 uses the same scaling technique as in Chronos-2, a $z$-score normalization followed by an $\operatorname{arcsinh}$ transform that compresses heavy tails. 
+\begin{equation}
+	\tilde{x} = (1-b)\operatorname{arcsinh}\left(\dfrac{x - \mu_p}{\sigma_p} \right) + bx
+\end{equation}
+It extends this scaling with a binary gate $b$ that bypasses the transformation for variates taking only the values $\{0, 1\}$. Without this bypass, the standardized value of the positive level would grow as $1/\sqrt{\bar{p}}$ with decreasing frequency $\bar{p}$ of ones, so the same event would be encoded differently depending on how sparse it is in the context window. After scaling, each variate is padded and patched into $N = \lceil (T + H) / P \rceil$ non overlapping patches of length $P$ and then embedded to a higher dimension $D$ via a two-layer residual MLP $f_{\phi}^{\text{in}}: \mathbb{R}^{P} \to \mathbb{R}^D$ where $\phi$ denotes the model parameters. The input tensor $Z \in \mathbb{R}^{V \times N \times D}$ is then feed into the first block.
+
+
 
 
 \section{Timestral}

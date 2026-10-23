@@ -10,7 +10,7 @@
 
 What is time series forecasting? Given a known sequence of values $X_{1:T} = [x_1, \hdots, x_T]$ with $x_t \in \mathbb{R}$, the goal of time series forecasting is to predict the next $H$ future time steps $X_{T+1:T+H} = [x_{T+1}, \hdots, x_{T+H}]$, where $T$ denotes the context length and $H$ the forecast horizon. This setting describes the univariate case.
 
-To make the separation between known context and predictions more clear, throughout this thesis the future predictions are denoted as $Y_{1:H} = [y_{1}, \hdots, y_{H}]$ with $y_h \in \mathbb{R}$.
+To make the separation between known context and future targets more clear, throughout this thesis the future targets are denoted as $Y_{1:H} = [y_{1}, \hdots, y_{H}]$ with $y_h \in \mathbb{R}$ and the final model output is denoted as $\hat{Y}_{1:H} = [\hat{y}_{1}, \hdots, \hat{y}_{H}]$ with $\hat{y}_h \in \mathbb{R}$.
 
 Modern time series models such as Chronos-2 (\citeauthor{chronos2}~\cite{chronos2}), Toto 2.0 (\citeauthor{toto2}~\cite{toto2}) and TiRex-2 (\citeauthor{tirex2}~\cite{tirex2}) extend the univariate case to multivariate and incorporate additional information by using one or multiple covariates for the historic context and forecast horizon. Following the notation of \citeauthor{tirex2}~\cite{tirex2} with minor adaptations, the input now consists of the target series $X^{tgt}_{1:T} \in \mathbb{R}^{V^{tgt} \times T}$, past covariates $X^{pcov}_{1:T} \in \mathbb{R}^{V^{pcov} \times T}$ which are observed up to time $T$, and future covariates $X^{fcov}_{1:T+H} \in \mathbb{R}^{V^{fcov} \times (T+H)}$ which are also known over the forecast horizon. The total number of variates is $V = V^{tgt} + V^{pcov} + V^{fcov}$. The predictions $Y_{1:H} \in \mathbb{R}^{V^{tgt} \times H}$ also gain an additional variate dimension.
 
@@ -27,13 +27,15 @@ This distribution is often approximated by $K$ quantile levels $\mathcal{Q} = \l
 \end{equation}
 where $\mathcal{Q}_\tau (\cdot | \cdot)$ defines the conditional $\tau$-quantile.
 
-Further, in recent models an input sequence is often splitted to non-overlapping patches of length $P$. After extending all series over the forecast horizon, this transformation reshapes a time series $X \in \mathbb{R}^{V \times T}$ into $X \in \mathbb{R}^{V \times N \times P}$, where $N = \lceil (T + H) / P \rceil$ denotes the number of patches. This applies to targets, past covariates and future covariates. As a result of patching and quantile prediction, the intermediate model output has the shape $\hat{Y} \in \mathbb{R}^{V \times N \times P \times K}$.
+Further, in recent models an input sequence is often splitted to non-overlapping patches of length $P$. After extending all series over the forecast horizon, this transformation reshapes a time series $X \in \mathbb{R}^{V \times T}$ into $X \in \mathbb{R}^{V \times N \times P}$, where $N = \lceil (T + H) / P \rceil$ denotes the number of patches. This applies to targets, past covariates and future covariates. 
+Usually, this patches are further embedded into a higher dimension $D$ to serve as input to the model. As a result of patching and embedding the model input has the shape $Z \in \mathbb{R}^{V \times N \times D}$. The final hidden state is then transformed to quantile predictions $\hat{Y} \in \mathbb{R}^{V^{tgt} \times H \times K}$.
 
-To complete the notation, $D$ denotes the model dimension and $B$ the batch size. Since this notations describe a general form of modern time series models and of the forecasting process, individual models may deviate slightly from it. Such differences are described in the respective sections.
+To complete the notation, $B$ denotes the batch size. Since this notations describe a general form of modern time series models and of the forecasting process, individual models may deviate slightly from it. Such differences are described in the respective sections.
 
 \begin{itemize}
 	\item $X$: model input (split into $X^{tgt}$, $X^{pcov}$, $X^{fcov}$)
-	\item $Y$: future predictions; $\hat{Y}$: model output
+	\item $Y$: future targets; $\hat{Y}$: model output
+	\item $Z$: embedding output; $\hat{Z}$: hidden state or intermediate model output 
 	\item $T$: context length
 	\item $H$: forecast horizon
 	\item $V$: number of variates ($V^{tgt}$, $V^{pcov}$, $V^{fcov}$)
