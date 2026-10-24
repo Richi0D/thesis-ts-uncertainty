@@ -37,7 +37,12 @@ The extended inputs $X \in \mathbb{R}^{V \times (T+H)}$ for TiRex-2 are preproce
 \end{equation}
 It extends this scaling with a binary gate $b$ that bypasses the transformation for variates taking only the values $\{0, 1\}$. Without this bypass, the standardized value of the positive level would grow as $1/\sqrt{\bar{p}}$ with decreasing frequency $\bar{p}$ of ones, so the same event would be encoded differently depending on how sparse it is in the context window. After scaling, each variate is padded and patched into $N = \lceil (T + H) / P \rceil$ non overlapping patches of length $P$ and then embedded to a higher dimension $D$ via a two-layer residual MLP $f_{\phi}^{\text{in}}: \mathbb{R}^{P} \to \mathbb{R}^D$ where $\phi$ denotes the model parameters. The input tensor $Z \in \mathbb{R}^{V \times N \times D}$ is then feed into the first block.
 
+The block is build from two parts. The time mixer which process each variate independently along the time axis $N$. It processes the time series by a bi-directional weight-tied xLSTM (\citeauthor{bixlstm}~\cite{bixlstm}). Target and past-covariate tokens are processed strictly forward, future-known covariates tokens are processed reverse and then combined by a linear fusion layer. The xLSTM alternates between mLSTM and sLSTM blocks. At the end of of the time mixer a MLP with a residual connection is added.
+The variate mixer uses multi-head self-attention with an asymmetric mask for each group and is inactive for univariate forecasting. The mask allows target queries to read from covariate keys but covariate queries cannot read target keys. A MLP with residual connection is also added at the end of the variate mixer.
 
+After alternating between time mixer and variate mixer the quantile predictions are then created by a two-layer MLP and scaled back.
+
+Since TiRex-2 uses a recurrent model as a time mixer, it is very efficient on long context. It scales with $\mathcal{O}(V \ N)$ on the time axis, while an attention-based time mixer would scale with $\mathcal{O}(V \ N^2)$. This allows TiRex-2  to be efficient in streaming tasks. 
 
 
 \section{Timestral}

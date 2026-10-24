@@ -10,8 +10,7 @@ This thesis investigates whether uncertainty estimates from recurrent time serie
 - (H) = forecast horizon
 - (P) = patch size
 - (D) = model dimension
-- (Q) = number of quantiles
-
+- (K) = number of quantiles
 
 ## Starting Tasks
 

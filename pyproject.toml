@@ -21,9 +21,11 @@ dependencies = [
     "anywidget",
     "vl-convert-python>=1.9.0",
     "pyarrow>=24.0.0",
+    "statsforecast",
     "chronos-forecasting",
     "toto-models",
     "tirex-2",
+    "timestral @ git+https://github.com/mistralai/timestral.git"
 ]
 
 
