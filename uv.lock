@@ -455,6 +455,23 @@ wheels = [
 ]
 
 [[package]]
+name = "dysts"
+version = "0.96"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "gluonts", extra = ["arrow"] },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/19/14/5d41ae77a78435b782ae08e5b5e801699ad0679d424f0bf884078c38e780/dysts-0.96.tar.gz", hash = "sha256:772579ef5abbc3e1c3a863646488b4787032e789cba53f52f4f5210cf22fafc6", size = 26439941, upload-time = "2025-06-29T10:16:41.413Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/c7/0f4b3abde6920d96936bf0df44921519201e04617b9a6d65ebec6433a4fe/dysts-0.96-py3-none-any.whl", hash = "sha256:17d0106a33e424cd43692a2c7cab72da8784a8726cd277656ac81d9a0ea530a2", size = 26440437, upload-time = "2025-06-29T10:16:38.69Z" },
+]
+
+[[package]]
 name = "einops"
 version = "0.8.2"
 source = { registry = "https://pypi.org/simple" }
@@ -604,6 +621,9 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+arrow = [
+    { name = "pyarrow" },
+]
 torch = [
     { name = "lightning" },
     { name = "pytorch-lightning" },
@@ -2326,6 +2346,7 @@ dependencies = [
     { name = "altair" },
     { name = "anywidget" },
     { name = "chronos-forecasting" },
+    { name = "dysts" },
     { name = "huggingface-hub" },
     { name = "ipykernel" },
     { name = "ipywidgets" },
@@ -2353,6 +2374,7 @@ requires-dist = [
     { name = "altair", specifier = ">=6.1.0" },
     { name = "anywidget" },
     { name = "chronos-forecasting" },
+    { name = "dysts" },
     { name = "huggingface-hub" },
     { name = "ipykernel", specifier = ">=7.2.0" },
     { name = "ipywidgets", specifier = ">=8.1.8" },

@@ -6,7 +6,7 @@ import altair as alt
 import numpy as np
 import polars as pl
 
-from ts_uncertainty.synthetic import SyntheticSample
+from ts_uncertainty.sample import Sample
 
 # categorical slots in fixed order, colour follows the entity
 SERIES_COLORS = {"context": "#2a78d6", "target": "#eb6834", "forecast": "#8a4fd1", "spike": "#1baf7a"}
@@ -17,15 +17,15 @@ GRIDLINE = "#e1e0d9"
 MUTED = "#8a8984"
 
 
-def plot_synthetic_sample(
-    sample: SyntheticSample,
+def plot_sample(
+    sample: Sample,
     title: str | None = None,
     width: int = 640,
     height: int = 260,
     show_covariate: bool = True,
     prediction=None,
     quantiles: Sequence[float] | None = None,
-    intervals: Sequence[float] | None = None,
+    coverages: Sequence[float] | None = None,
     variate: int = 0,
 ) -> alt.VConcatChart | alt.LayerChart:
     """Plot context, forecast target, spikes, forecast start and shift point of one sample.
@@ -42,7 +42,7 @@ def plot_synthetic_sample(
             H may be shorter than the sample's horizon.
         quantiles: the Q quantile levels of prediction (must contain 0.5), or None for a
             point forecast.
-        intervals: coverages of the bands to draw, e.g. (0.5, 0.8); each needs both
+        coverages: central-interval coverages to shade, e.g. (0.5, 0.8); 0.8 = band q0.1–q0.9. Each c needs
             (1 - c) / 2 and (1 + c) / 2 in quantiles. None draws every symmetric pair.
         variate: which variate of a (V, Q, H) or (V, H) prediction to plot.
     """
@@ -55,7 +55,7 @@ def plot_synthetic_sample(
 
     bands = []
     if prediction is not None:
-        forecast, bands = _forecast_frame(prediction, quantiles, intervals, variate, context_length, len(sample.target))
+        forecast, bands = _forecast_frame(prediction, quantiles, coverages, variate, context_length, len(sample.target))
         df = df.join(forecast, on="t", how="left")
 
     x = alt.X("t:Q", title="time step", scale=alt.Scale(domain=[0, len(y) - 1], nice=False))
@@ -105,8 +105,10 @@ def plot_synthetic_sample(
     )
 
     events = [{"t": context_length - 0.5, "label": "forecast start", "color": TEXT_SECONDARY}]
-    if sample.shift_point is not None:
-        events.append({"t": sample.shift_point - 0.5, "label": f"shift: {sample.shift_type}", "color": TEXT_PRIMARY})
+    for start, end in sample.shift_episodes:
+        events.append({"t": start - 0.5, "label": f"shift: {sample.shift_type}", "color": TEXT_PRIMARY})
+        if end < len(y):
+            events.append({"t": end - 0.5, "label": "shift end", "color": TEXT_PRIMARY})
     # stack labels so neighbouring events don't collide
     events_df = pl.DataFrame(events).with_columns(y=4 + 14 * pl.int_range(pl.len()))
     event_rules = (
@@ -121,10 +123,13 @@ def plot_synthetic_sample(
     )
 
     subtitle = []
-    if sample.periods:
-        subtitle.append("periods: " + ", ".join(str(p) for p in sample.periods))
-    if sample.shift_point is not None:
-        subtitle.append(f"{sample.shift_type} shift at t = {sample.shift_point}")
+    if sample.info.get("system"):
+        subtitle.append(f"system: {sample.info['system']}")
+    if sample.info.get("periods"):
+        subtitle.append("periods: " + ", ".join(str(p) for p in sample.info["periods"]))
+    if sample.shift_episodes:
+        spans = ", ".join(f"{start}" if end == len(y) else f"{start}–{end - 1}" for start, end in sample.shift_episodes)
+        subtitle.append(f"{sample.shift_type} shift at t = {spans}")
     if len(sample.spike_idx):
         subtitle.append(f"{len(sample.spike_idx)} spikes")
 
@@ -158,7 +163,7 @@ def plot_synthetic_sample(
     return _style(
         chart.properties(
             title=alt.Title(
-                title or "Synthetic sample",
+                title or "Sample",
                 subtitle=" · ".join(subtitle) if subtitle else alt.Undefined,
                 anchor="start",
             )
@@ -169,7 +174,7 @@ def plot_synthetic_sample(
 def _forecast_frame(
     prediction,
     quantiles: Sequence[float] | None,
-    intervals: Sequence[float] | None,
+    coverages: Sequence[float] | None,
     variate: int,
     context_length: int,
     horizon: int,
@@ -205,24 +210,24 @@ def _forecast_frame(
     if median is None:
         raise ValueError("quantiles must contain the median 0.5")
 
-    if intervals is None:
-        intervals = sorted({round(1 - 2 * level, 6) for level in q if level < 0.5 and index(1 - level) is not None})
+    if coverages is None:
+        coverages = sorted({round(1 - 2 * level, 6) for level in q if level < 0.5 and index(1 - level) is not None})
     columns = {"t": context_length + np.arange(prediction.shape[1]), "median": prediction[median]}
     bands = []
-    for coverage in sorted(intervals, reverse=True):
+    for coverage in sorted(coverages, reverse=True):
         lo, hi = index((1 - coverage) / 2), index((1 + coverage) / 2)
         if lo is None or hi is None:
-            raise ValueError(f"interval {coverage} needs quantiles {(1 - coverage) / 2:g} and {(1 + coverage) / 2:g}")
+            raise ValueError(f"coverage {coverage} needs quantiles {(1 - coverage) / 2:g} and {(1 + coverage) / 2:g}")
         c = round(100 * coverage)
         columns[f"lo{c}"], columns[f"hi{c}"] = prediction[lo], prediction[hi]
         bands.append(c)
     return pl.DataFrame(columns), bands
 
 
-def _covariate_panels(sample: SyntheticSample, x: alt.X, width: int) -> alt.FacetChart:
-    """One small panel per covariate feature (sin/cos per period), single neutral hue."""
+def _covariate_panels(sample: Sample, x: alt.X, width: int) -> alt.FacetChart:
+    """One small panel per covariate feature (sin/cos per period, shift/spike indicators), single neutral hue."""
     t = np.arange(sample.covariate.shape[0])
-    names = [f"sin (p={p})" for p in sample.periods] + [f"cos (p={p})" for p in sample.periods]
+    names = list(sample.covariate_names)
     df = pl.concat(
         [pl.DataFrame({"t": t, "value": sample.covariate[:, i], "feature": name}) for i, name in enumerate(names)]
     )
