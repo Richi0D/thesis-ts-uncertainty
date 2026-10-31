@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Master's thesis repo (JKU Linz): **uncertainty quantification of recurrent time series foundation models (TiRex / xLSTM) under distribution shift**. Research context and research questions are in [NOTES_PERSONAL.md](../NOTES_PERSONAL.md); the plan to reimplement Chronos-2 → Toto 2.0 → TiRex-2 from scratch is in [RoadMap_FoundationModels.md](../RoadMap_FoundationModels.md).
+Master's thesis repo (JKU Linz): **uncertainty quantification of time series foundation models (TiRex / xLSTM) under distribution shift**. Research context and research questions are in [NOTES_PERSONAL.md](../NOTES_PERSONAL.md); the plan to reimplement Chronos-2 → Toto 2.0 → TiRex-2 from scratch is in [RoadMap_FoundationModels.md](../RoadMap_FoundationModels.md).
 
 ## Rules
 

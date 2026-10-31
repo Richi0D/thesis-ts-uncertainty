@@ -187,8 +187,7 @@ How the models will react to this? Quantile collapse or uncertainty increase?
 - Median
 - Mean
 - Autoregressive multi-quantile decoding (Morai 2.0)
-- Only xlstm: keep state from previous generation.
-
+- Only xlstm: keep state from previous generation. (or out of scope: fix state of real context and use it as streaming state)
 
 
 ## Licensing
