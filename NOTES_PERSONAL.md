@@ -18,6 +18,8 @@
 - Study TCM, TSI, autoregressive generation, and univariate generators.
 - Implement and investigate the Dyst benchmark.
 
+- implement autoregressive multi-quantile decoding. from Morai 2.0 (overcome the horizon limit of certain models)
+
 
 
 ## Starting Notes 
@@ -31,7 +33,7 @@ No existing work combines these two lines: nobody has tested whether a foundatio
 
 ### Proposed Thesis
 
-**Title (working):** Robust Uncertainty Quantification for Recurrent Time Series Foundation Models under Distribution Shift: A Study on Energy Forecasting with TiRex
+**Title (working):** Robust Uncertainty Quantification for Time Series Foundation Models under Distribution Shift: A Study on Forecasting
 
 **Research questions:**
 1. How does the calibration quality (coverage, sharpness, quantile loss) of TiRex's autoregressive generation degrade as distribution shift increases, compared to in-distribution performance?

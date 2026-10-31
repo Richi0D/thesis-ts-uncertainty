@@ -1,6 +1,6 @@
 # Uncertainty for Time Series Foundation Models
 
-This thesis investigates whether uncertainty estimates from time series foundation models, remain reliable under distribution shift.
+This thesis investigates whether uncertainty estimates from time series foundation models, remain reliable under distribution shift and check certain autoregressive methods in combination with distribution shift.
 
 # Notation
 
@@ -12,19 +12,21 @@ This thesis investigates whether uncertainty estimates from time series foundati
 - (D) = model dimension
 - (K) = number of quantiles
 
-## Starting Tasks
+## Models
+These are the main models used for the thesis:
 
-- Literature research: read and organize relevant papers.
-- Study different time series models:
-  - TiRex-2,
-  - Chronos-2,
-  - Toto 2.0,
-  - Timestral (newly released oct 2026)
-  - TimesFM-3 (newly released aug 2026, just check but not implement. weights are not fully open and restricted for commercial and production use!)
-  - compare them with their predecessors, and build the theoretical background needed to understand the models.
-- Inspect the `fev-bench` implementations of these models.
-- Study TCM, TSI, autoregressive generation, and univariate generators.
-- Implement and investigate the Dysts chaotic systems.
+| Model | Type | Parameters | Context | Horizon | Patch size | Quantiles |
+| --- | --- | --- | --- | --- | --- | --- |
+| [AutoArima](https://www.researchgate.net/publication/222105759_Automatic_Time_Series_Forecasting_TheforecastPackage_forR) | local | fit per series | full history | unrestricted | - | any |
+| [Chronos-2](https://github.com/amazon-science/chronos-forecasting) | zero-shot | 120M | 8192 | 1024 | 16 | 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99 |
+| [TiRex-2](https://github.com/NX-AI/tirex-2) | zero-shot | 38.4M (univariate), 82.5M (multivariate) | 2048 | 320 | 32 | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 |
+| [Timestral](https://github.com/mistralai/timestral) | zero-shot | 5M, 28M, 123M, 209M | 32,768 | 1024 | 32 | 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99 |
+
+The common setting for experiments that every model can cover is:
+| Context | Horizon | Quantiles |
+| --- | --- | --- |
+| 2048 | 320 | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 |
+
 
 ## Synthetic Data Generator
 
@@ -121,6 +123,73 @@ With probability `shift_recurring_prob` (default 0), a shift is recurring instea
 This tests whether a model learns the shift from the context and expects it again in the horizon. During a `trend` episode, the ramp starts from 0 at each episode start, and the series drops back to its normal path when the episode ends.
 
 For a single sample, `inj(s, recurring=True)` forces a recurring shift and `inj(s, recurring=False)` forces a persistent one. `inj(s, shift_episodes=[(0.1, 0.2), (0.85, 1.0)])` places episodes explicitly as fractions of T + H; they must be sorted and must not overlap. `ChaoticGenerator.sample` takes the same arguments for dynamics shifts.
+
+
+## Experiments
+
+Each experiment should be done with the synthetic, chaotic generator and on a real time series.
+Gneral question: does more context help?
+
+### Noise
+
+#### Univariate case without covariates
+
+Only a single univariate time series.
+
+1. Inject noise only into the forecast horizon. Assumption: models can not detect noise. Never appear in context. Uncertainty should stay same but error increase.
+2. Inject noise only into the context horizon. Assumption: models will halucinate and predict noise. Uncertainty should increase.
+3. Inject noise into context and forecast horizon. Assumption: models should detect noise. Uncertainty should increase due to noise.
+
+### Spikes
+
+#### Univariate case without covariates
+
+Only a single univariate time series.
+
+1. Inject spikes only into the forecast horizon. Assumption: models can not detect spikes. Never appear in context. Uncertainty should stay same.
+2. Inject spikes only into the context horizon. Assumption: models will halucinate and predict random spikes. Uncertainty should increase.
+3. Inject spikes into context and forecast horizon. (at a defined period). Assumption: models should detect spikes. Uncertainty should decrease at spikes.
+4. Inject spikes into context and forecast horizon. (at random timesteps). Assumption: models can not detect it. Uncertainty should increase.
+
+#### Univariate case with covariates
+
+A single univariate time series with a covariate (1/0) for spikes.
+
+1. Inject spikes only into the forecast horizon. Assumption: models can detect spikes with the covariate. Uncertainty should decrease.
+2. Inject spikes only into the context horizon. Assumption: models will know there are not spikes due to covariate. Uncertainty should decrease.
+3. Inject spikes into context and forecast horizon. (at a defined period). Assumption: models should detect spikes. Uncertainty should decrease at spikes.
+4. Inject spikes into context and forecast horizon. (at random timesteps). Assumption: models will know there are spikes due to covariate. Uncertainty should decrease.
+
+### Continous Shift
+
+#### Univariate case without covariates
+
+Only a single univariate time series.
+
+1. Inject shift only into the forecast horizon. Assumption: models can not detect shift. Never appear in context. Uncertainty should stay same.
+2. Inject shift only into the context horizon. Assumption: models will halucinate and predict shift which then not appear. Uncertainty should increase.
+3. Inject shift into context and forecast horizon. Assumption: models should detect shift. Uncertainty should decrease.
+
+#### Univariate case with covariates
+
+A single univariate time series with a covariate for shift.
+
+1. Inject shift only into the forecast horizon. Assumption: models can detect shift with the covariate. Uncertainty should decrease.
+2. Inject shift only into the context horizon. Assumption: models will know there is no shift due to covariate. Uncertainty should increase.
+3. Inject shift into context and forecast horizon. Assumption: models should detect shift. Uncertainty should decrease.
+
+
+### Autoregressive prediction
+
+Check different autoregressive methods + injection of noise, spikes and shift.
+How the models will react to this? Quantile collapse or uncertainty increase?
+
+- Median
+- Mean
+- Autoregressive multi-quantile decoding (Morai 2.0)
+- Only xlstm: keep state from previous generation.
+
+
 
 ## Licensing
 
