@@ -27,6 +27,7 @@ def plot_sample(
     quantiles: Sequence[float] | None = None,
     coverages: Sequence[float] | None = None,
     variate: int = 0,
+    y_domain: tuple[float, float] | None = None,
 ) -> alt.VConcatChart | alt.LayerChart:
     """Plot context, forecast target, spikes, forecast start and shift point of one sample.
 
@@ -45,6 +46,8 @@ def plot_sample(
         coverages: central-interval coverages to shade, e.g. (0.5, 0.8); 0.8 = band q0.1–q0.9. Each c needs
             (1 - c) / 2 and (1 + c) / 2 in quantiles. None draws every symmetric pair.
         variate: which variate of a (V, Q, H) or (V, H) prediction to plot.
+        y_domain: fixed (min, max) of the main panel's value axis, e.g. to give several
+            charts the same scale; None fits it to the data. Covariate panels keep their own.
     """
     context_length = len(sample.context)
     y = np.concatenate([sample.context, sample.target])
@@ -68,15 +71,23 @@ def plot_sample(
         legend=alt.Legend(orient="top", direction="horizontal", symbolType="stroke"),
     )
     base = alt.Chart(df).encode(x=x)
+    # one y scale for every layer of the main panel: with a fixed y_domain, layers without it
+    # (e.g. wide forecast bands) would otherwise widen the shared axis again
+    y_scale = alt.Scale(domain=list(y_domain), nice=False) if y_domain else alt.Undefined
 
-    lines = base.mark_line(strokeWidth=2, strokeCap="round", strokeJoin="round").encode(
-        y=alt.Y("value:Q", title="value"), color=color
+    def y_enc(field: str, **kwargs) -> alt.Y:
+        return alt.Y(f"{field}:Q", scale=y_scale, **kwargs)
+
+    # clip: marks outside a fixed y_domain are cut at the panel edge instead of spilling out
+    clip = y_domain is not None
+    lines = base.mark_line(strokeWidth=2, strokeCap="round", strokeJoin="round", clip=clip).encode(
+        y=y_enc("value", title="value"), color=color
     )
     spikes = (
         base.transform_filter(alt.datum.spike)
         .transform_calculate(segment="'spike'")
-        .mark_point(filled=True, size=80, stroke=SURFACE, strokeWidth=2, opacity=1)
-        .encode(y="value:Q", color=color)
+        .mark_point(filled=True, size=80, stroke=SURFACE, strokeWidth=2, opacity=1, clip=clip)
+        .encode(y=y_enc("value"), color=color)
     )
 
     # crosshair: nearest time step under the pointer
@@ -93,14 +104,14 @@ def plot_sample(
             # only the widest band, all of them would flood the tooltip
             c = bands[0]
             tooltip += [
-                alt.Tooltip(f"lo{c}:Q", title=f"{c}% lower", format=".3f"),
-                alt.Tooltip(f"hi{c}:Q", title=f"{c}% upper", format=".3f"),
+                alt.Tooltip(f"lo{c}:Q", title=f"q{(100 - c) / 200:g}", format=".3f"),
+                alt.Tooltip(f"hi{c}:Q", title=f"q{(100 + c) / 200:g}", format=".3f"),
             ]
-    hit_targets = base.mark_point(size=400, opacity=0).encode(y="value:Q", tooltip=tooltip).add_params(hover)
+    hit_targets = base.mark_point(size=400, opacity=0, clip=clip).encode(y=y_enc("value"), tooltip=tooltip).add_params(hover)
     crosshair = base.mark_rule(color=MUTED, strokeWidth=1).encode(opacity=alt.condition(hover, alt.value(1), alt.value(0)))
     hover_dot = (
-        base.mark_point(filled=True, size=80, stroke=SURFACE, strokeWidth=2, opacity=1)
-        .encode(y="value:Q", color=color)
+        base.mark_point(filled=True, size=80, stroke=SURFACE, strokeWidth=2, opacity=1, clip=clip)
+        .encode(y=y_enc("value"), color=color)
         .transform_filter(hover)
     )
 
@@ -143,15 +154,15 @@ def plot_sample(
         # nested bands, widest first; per-band opacity so the innermost stacks to 0.5
         band_opacity = 1 - 0.5 ** (1 / len(bands)) if bands else 0
         band_layers = [
-            forecast_base.mark_area(color=SERIES_COLORS["forecast"], opacity=band_opacity).encode(
-                y=f"lo{c}:Q", y2=f"hi{c}:Q"
+            forecast_base.mark_area(color=SERIES_COLORS["forecast"], opacity=band_opacity, clip=clip).encode(
+                y=y_enc(f"lo{c}"), y2=f"hi{c}:Q"
             )
             for c in bands
         ]
         median_line = [
             forecast_base.transform_calculate(segment="'forecast'")
-            .mark_line(strokeWidth=2, strokeCap="round", strokeJoin="round")
-            .encode(y="median:Q", color=color)
+            .mark_line(strokeWidth=2, strokeCap="round", strokeJoin="round", clip=clip)
+            .encode(y=y_enc("median"), color=color)
         ]
 
     # spikes below the line so the line runs into the dot instead of stopping at its ring;

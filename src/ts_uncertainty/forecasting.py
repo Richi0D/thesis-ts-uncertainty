@@ -25,7 +25,9 @@ from ts_uncertainty.sample import (
     samples_to_tirex2_inputs,
 )
 
-MODELS = ("autoarima", "chronos2", "tirex2", "timestral")
+# statsforecast models: ForecastModel name -> statsforecast class (= its output column)
+STAT_MODELS = {"autoarima": "AutoARIMA", "autotheta": "AutoTheta", "seasonalnaive": "SeasonalNaive"}
+MODELS = (*STAT_MODELS, "chronos2", "tirex2", "timestral")
 TIMESTRAL_SIZES = ("5M", "28M", "123M", "209M")
 # TiRex-2's native levels; every other model outputs these too.
 DEFAULT_QUANTILE_LEVELS = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
@@ -39,6 +41,7 @@ class QuantileForecast:
     quantile_levels: (Q,)      probability levels, contains 0.5
     context:         (B, T)    history the forecast was made from
     target:          (B, H)    ground truth over the horizon
+    season_length:   (B,)      seasonal period of each series (Sample.season_length) for scaled metrics
     """
 
     model: str
@@ -46,6 +49,7 @@ class QuantileForecast:
     quantile_levels: np.ndarray
     context: np.ndarray
     target: np.ndarray
+    season_length: np.ndarray | None = None
 
     @property
     def median(self) -> np.ndarray:
@@ -67,10 +71,10 @@ class QuantileForecast:
         """Arrays in the time-first layout of `metrics.py` (rows = time steps, columns = series).
 
         y_true: (H, B), y_pred: (H, B) median, y_quantiles: (H, B, Q), y_train: (T, B),
-        quantiles: list of the Q levels. Usage:
+        quantiles: list of the Q levels, season_length: (B,) seasonal period per series. Usage:
             m = fc.metric_inputs()
-            mean_absolute_scaled_error(m["y_true"], m["y_pred"], m["y_train"])
-            quantile_loss(m["y_true"], m["y_quantiles"], m["quantiles"])
+            mean_absolute_scaled_error(m["y_true"], m["y_pred"], m["y_train"], sp=m["season_length"])
+            scaled_quantile_loss(m["y_true"], m["y_quantiles"], m["y_train"], m["quantiles"], m["season_length"])
         """
         return {
             "y_true": self.target.T,
@@ -78,6 +82,7 @@ class QuantileForecast:
             "y_quantiles": self.quantiles.transpose(2, 0, 1),
             "y_train": self.context.T,
             "quantiles": self.quantile_levels.tolist(),
+            "season_length": np.ones(len(self.target), dtype=int) if self.season_length is None else self.season_length,
         }
 
 
@@ -89,11 +94,13 @@ class ForecastModel:
         size: Timestral checkpoint size, one of TIMESTRAL_SIZES; ignored by the other models.
         quantile_levels: common levels picked out of every forecast; each must be one of the
             model's native levels, otherwise forecast raises a ValueError. None keeps the
-            model's native levels (AutoARIMA then uses DEFAULT_QUANTILE_LEVELS).
+            model's native levels (the statistical models then use DEFAULT_QUANTILE_LEVELS).
         device: torch device for the neural models, defaults to cuda if available.
         checkpoint: override the Hugging Face repo id / local path of a neural model.
-        season_length: AutoARIMA season length for all samples; None uses each sample's own
+        season_length: season length of the statistical models (STAT_MODELS) for all samples;
+            None uses each sample's own
             Sample.season_length (samples with different season lengths are fitted in groups).
+        n_jobs: statistical-model worker processes (one series per process), -1 = all CPU cores.
         batch_size: series per forward pass of the neural models.
     """
 
@@ -105,6 +112,7 @@ class ForecastModel:
         device: str | None = None,
         checkpoint: str | None = None,
         season_length: int | None = None,
+        n_jobs: int = -1,
         batch_size: int = 256,
     ) -> None:
         if name not in MODELS:
@@ -119,6 +127,8 @@ class ForecastModel:
                 raise ValueError("quantile_levels must contain the median 0.5")
         if season_length is not None and season_length < 1:
             raise ValueError(f"season_length must be >= 1, got {season_length}")
+        if n_jobs == 0 or n_jobs < -1:
+            raise ValueError(f"n_jobs must be -1 or >= 1, got {n_jobs}")
         if batch_size < 1:
             raise ValueError(f"batch_size must be >= 1, got {batch_size}")
 
@@ -127,9 +137,10 @@ class ForecastModel:
         self.quantile_levels = None if quantile_levels is None else tuple(float(level) for level in quantile_levels)
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.season_length = season_length
+        self.n_jobs = n_jobs
         self.batch_size = batch_size
         self.checkpoint = checkpoint or {
-            "autoarima": None,
+            **dict.fromkeys(STAT_MODELS),
             "chronos2": "amazon/chronos-2",
             "tirex2": "NX-AI/TiRex-2",
             "timestral": f"mistralai/Timestral-{size}",
@@ -141,9 +152,10 @@ class ForecastModel:
 
     @property
     def config(self):
-        """The native model config (None for AutoARIMA)."""
+        """The native model config (None for the statistical models)."""
+        if self.name in STAT_MODELS:
+            return None
         return {
-            "autoarima": lambda: None,
             "chronos2": lambda: self.model.model.chronos_config,
             "tirex2": lambda: self.model.model.stack_config,
             "timestral": lambda: self.model.config,
@@ -152,7 +164,7 @@ class ForecastModel:
     @property
     def native_quantile_levels(self) -> tuple[float, ...]:
         """Quantile levels the model outputs itself."""
-        if self.name == "autoarima":
+        if self.name in STAT_MODELS:
             return DEFAULT_QUANTILE_LEVELS
         if self.name == "chronos2":
             return tuple(self.model.quantiles)
@@ -161,8 +173,8 @@ class ForecastModel:
         return tuple(self.model.quantile_levels)
 
     def _load(self):
-        if self.name == "autoarima":
-            return None  # one StatsForecast per season length, built in _forecast_autoarima
+        if self.name in STAT_MODELS:
+            return None  # one StatsForecast per season length, built in _forecast_statsforecast
         if self.name == "chronos2":
             from chronos import Chronos2Pipeline
 
@@ -199,7 +211,7 @@ class ForecastModel:
         levels = self.quantile_levels or self.native_quantile_levels
 
         quantiles = {  # (B, Q, H) at `levels`
-            "autoarima": self._forecast_autoarima,
+            **dict.fromkeys(STAT_MODELS, self._forecast_statsforecast),
             "chronos2": self._forecast_chronos2,
             "tirex2": self._forecast_tirex2,
             "timestral": self._forecast_timestral,
@@ -212,31 +224,32 @@ class ForecastModel:
             quantile_levels=np.asarray(levels, dtype=np.float64),
             context=np.stack([np.asarray(s.context[-T:], dtype=np.float32) for s in samples]),
             target=np.stack([np.asarray(s.target[:H], dtype=np.float32) for s in samples]),
+            season_length=np.array([s.season_length for s in samples]),
         )
 
-    def _forecast_autoarima(self, samples, H, levels, **predict_kwargs) -> np.ndarray:
-        # Gaussian prediction intervals: quantile q is a bound of the (|1 - 2q|·100)% interval,
-        # the median is the mean forecast.
+    def _forecast_statsforecast(self, samples, H, levels, **predict_kwargs) -> np.ndarray:
+        # statsforecast returns central prediction intervals: quantile q is a bound of the
+        # (|1 - 2q|·100)% interval, the median is the point forecast. Covariates are only used
+        # by AutoARIMA (as regressors); AutoTheta and SeasonalNaive ignore them.
         coverages = {}
         for q in levels:
             if not np.isclose(q, 0.5):
                 c = abs(1 - 2 * q) * 100
                 if not np.isclose(c, round(c)):
-                    raise ValueError(f"AutoARIMA needs quantile levels on a 0.005 grid, got {q}")
+                    raise ValueError(f"{self.name} needs quantile levels on a 0.005 grid, got {q}")
                 coverages[q] = round(c)
+        import statsforecast.models
         from statsforecast import StatsForecast
-        from statsforecast.models import AutoARIMA
 
-        columns = [
-            "AutoARIMA" if q not in coverages else f"AutoARIMA-{'lo' if q < 0.5 else 'hi'}-{coverages[q]}"
-            for q in levels
-        ]
+        alias = STAT_MODELS[self.name]
+        model_cls = getattr(statsforecast.models, alias)
+        columns = [alias if q not in coverages else f"{alias}-{'lo' if q < 0.5 else 'hi'}-{coverages[q]}" for q in levels]
         seasons = np.array([self.season_length or s.season_length for s in samples])  # (B,)
         out = np.empty((len(samples), len(levels), H))  # (B, Q, H)
         for m in np.unique(seasons):
             idx = np.flatnonzero(seasons == m)
             df, X_df, _ = samples_to_sf_inputs([samples[i] for i in idx])
-            sf = StatsForecast(models=[AutoARIMA(season_length=int(m))], freq=1)
+            sf = StatsForecast(models=[model_cls(season_length=int(m))], freq=1, n_jobs=self.n_jobs)
             fc = sf.forecast(df=df, h=H, X_df=X_df, level=sorted(set(coverages.values())), **predict_kwargs)
             # statsforecast sorts unique_id as strings ("0", "1", "10", ...): restore sample order
             fc = fc.sort(fc["unique_id"].cast(int), "ds")
