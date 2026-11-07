@@ -36,6 +36,7 @@ Data generation has two steps. First, a **generator** produces a clean series. T
 | --- | --- | --- | --- |
 | generate | `SyntheticGenerator` | [synthetic.py](src/ts_uncertainty/synthetic.py) | `level + slope * t + seasonal_t`, optional seasonal-phase covariates |
 | generate | `ChaoticGenerator` | [chaotic.py](src/ts_uncertainty/chaotic.py) | `level + slope * t + amplitude * x_t`, with `x_t` one coordinate of a dysts chaotic flow; optional dynamics shift |
+| generate | `RealSampler` | [real.py](src/ts_uncertainty/real.py) | random window of a real univariate series from a long polars DataFrame, z-normalised with the context statistics |
 | perturb | `Injector` | [injection.py](src/ts_uncertainty/injection.py) | shift, noise, spikes, shift/spike indicator covariates |
 
 All of them work on `Sample` objects ([sample.py](src/ts_uncertainty/sample.py)). Each series has length T + H and is split into a context of length T and a forecast target of length H. All parameters are drawn at random for every series.
@@ -55,19 +56,21 @@ s.shift_type, s.shift_point   # e.g. "trend", 114  (None if no shift; start of t
 s.shift_episodes              # e.g. ((114, 120),), (start, end) of each shift episode, end exclusive
 s.shift_info                  # magnitude, e.g. {"delta_slope": 0.03}
 s.spike_idx                   # indices of spikes in the T + H window
+s.season_length               # dominant seasonal period in steps (1 = no season), e.g. for AutoARIMA
 s.info                        # source metadata, e.g. {"periods": (24,)} or {"system": "Lorenz", ...}
 
 stream = map(inj, gen)        # endless stream of perturbed series
 batch = stack_samples([inj(next(gen)) for _ in range(32)])  # context (B, T), target (B, H), covariate (B, T + H, C) or None, shift_point (B,), shift_mask (B, T + H)
 
 real = inj(Sample.from_series(y, context_length=96))        # any (T + H,) series
+real = inj(next(RealSampler(df, context_length=96, horizon=24, seed=0)))  # random window of a real series
 ```
 
 ### SyntheticGenerator
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `seasonal` | `True` | Adds `n_periods` seasonal patterns, with periods drawn from `periods` (default 7, 12, 24, 52). Each pattern is a random Fourier series with `n_harmonics` terms and a random start phase. |
+| `seasonal` | `True` | Adds `n_periods` seasonal patterns, with periods drawn from `periods` (default 7, 12, 24, 52). Each pattern is a random Fourier series with `n_harmonics` terms and a random start phase. `season_length` is the drawn period with the largest amplitude, or 1 with `seasonal=False`. |
 | `covariate` | `False` | Returns sin/cos features of the seasonal phase over the full T + H window, so they are also known during the forecast horizon, like calendar features. They give the timing of the season but not its amplitude or shape. Requires `seasonal=True`. |
 | `level_range`, `slope_range`, `amplitude_range` | `(-1, 1)`, `(-0.01, 0.01)`, `(0.5, 2)` | Ranges of the constant level, the slope per time step and the seasonal amplitude per period. |
 
@@ -83,6 +86,22 @@ Two shifts change the dynamics themselves. They can't be applied to a finished s
 | `parameter` | one system parameter is perturbed; the trajectory continues under the new equations | `shift_param_range` (relative) |
 
 The episodes are drawn as for the injector (see below). A sample that already has a dynamics shift keeps it, and the injector adds no second shift.
+
+The flows are aperiodic, so `season_length` is 1. `period_as_season=True` sets it to `round(pts_per_period)`, the dominant period of the spectrum. That is only a quasi-period: the autocorrelation at that lag is mostly low (median ≈ 0.2), but seasonal AutoARIMA still gains a little on some systems.
+
+### RealSampler
+
+Draws random windows of length T + H from real univariate series. The input is a long polars DataFrame with one row per time step (columns `timestamp`, `value`, `series_index`, `series_name`, as written by [data_download.ipynb](notebooks/data_download.ipynb); names configurable). Only the value column is used, there are no covariates.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `series` | `None` | Restrict to these series ids; `None` uses all series. |
+| `weight` | `"series"` | `"series"` draws every series with equal probability, `"windows"` every valid window, so long series are drawn more often. |
+| `normalize` | `"context"` | `"context"` z-normalises the window with the context mean and std, so the series has scale ≈ 1 like the generated ones and the injector defaults fit. `"none"` keeps the raw values. |
+| `season`, `season_col` | `timedelta(days=1)`, `None` | `season_length = season / sampling step` per series, so the daily cycle of energy data gives 288 / 96 / 24 steps at 5 / 15 / 60 min. `None` gives 1. `season_col` names an optional column with a season length per series that overrides it. |
+| `check_gaps` | `True` | Rejects windows with a gap in the timestamps (step differs from the most common step of the series). Windows with missing values are always rejected. |
+
+Series without a valid window are dropped (`sampler.series_ids` lists the rest). Windows with a constant context are redrawn. `sampler.season_lengths` maps series id to season length. `info` holds `series_index`, `series_name`, `start` (row index), `start_time`, `freq`, and `loc` / `scale` to undo the normalisation (`y * scale + loc`). `sampler.sample(series=0, start=100)` picks a specific window.
 
 ### Injector
 
@@ -128,7 +147,7 @@ For a single sample, `inj(s, recurring=True)` forces a recurring shift and `inj(
 ## Experiments
 
 Each experiment should be done with the synthetic, chaotic generator and on a real time series.
-Gneral question: does more context help?
+General question: does more context help?
 
 ### Noise
 

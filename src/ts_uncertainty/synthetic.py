@@ -16,7 +16,7 @@ from collections.abc import Iterator, Sequence
 
 import numpy as np
 
-from ts_uncertainty.sample import Sample, stack_samples
+from ts_uncertainty.sample import Sample
 
 
 class SyntheticGenerator:
@@ -74,7 +74,10 @@ class SyntheticGenerator:
         return self.sample()
 
     def sample(self) -> Sample:
-        """Draw one clean sample; info holds the seasonal periods used (empty if none)."""
+        """Draw one clean sample; info holds the seasonal periods used (empty if none).
+
+        season_length is the period with the largest amplitude (1 without seasonality).
+        """
         rng = self.rng
         length = self.context_length + self.horizon
         t = np.arange(length, dtype=np.float64)
@@ -82,6 +85,7 @@ class SyntheticGenerator:
         y = rng.uniform(*self.level_range) + rng.uniform(*self.slope_range) * t
 
         periods: tuple[int, ...] = ()
+        amplitudes: list[float] = []
         covariate = None
         covariate_names: tuple[str, ...] = ()
         if self.seasonal:
@@ -89,24 +93,28 @@ class SyntheticGenerator:
             # random time offset so samples don't all start at phase 0
             t_abs = t + rng.integers(0, max(periods))
             for p in periods:
-                y += rng.uniform(*self.amplitude_range) * self._seasonal_shape(t_abs, p)
+                amplitudes.append(rng.uniform(*self.amplitude_range))
+                y += amplitudes[-1] * self._seasonal_shape(t_abs, p)
             if self.covariate:
                 phase = 2 * np.pi * t_abs[:, None] / np.array(periods)[None, :]
                 covariate = np.concatenate([np.sin(phase), np.cos(phase)], axis=1).astype(np.float32)  # (T + H, 2 * n_periods)
                 covariate_names = tuple(f"sin (p={p})" for p in periods) + tuple(f"cos (p={p})" for p in periods)
 
         y = y.astype(np.float32)
+        # a single season for AutoARIMA: the period with the largest amplitude
+        season_length = periods[int(np.argmax(amplitudes))] if periods else 1
         return Sample(
             context=y[: self.context_length],
             target=y[self.context_length :],
             covariate=covariate,
             covariate_names=covariate_names,
+            season_length=season_length,
             info={"periods": periods},
         )
 
-    def sample_batch(self, batch_size: int) -> dict[str, np.ndarray | None]:
-        """Stack batch_size clean samples, see stack_samples."""
-        return stack_samples([self.sample() for _ in range(batch_size)])
+    def sample_batch(self, batch_size: int) -> list[Sample]:
+        """List of batch_size samples; use stack_samples to get stacked arrays."""
+        return [self.sample() for _ in range(batch_size)]
 
     def _seasonal_shape(self, t: np.ndarray, period: int) -> np.ndarray:
         """Random periodic shape from a truncated Fourier series, normalised to unit max amplitude."""

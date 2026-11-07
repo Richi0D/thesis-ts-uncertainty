@@ -28,6 +28,7 @@ class Sample:
     shift_episodes: tuple[tuple[int, int], ...] = ()  # (start, end) of each shift episode, end exclusive
     shift_info: dict = field(default_factory=dict)  # magnitude, e.g. {"delta": 1.3}, {"factor": 2.3} or {"param": "rho", ...}
     spike_idx: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.int64))  # indices into T + H
+    season_length: int = 1  # dominant seasonal period in time steps (1 = no season), e.g. for AutoARIMA
     info: dict = field(default_factory=dict)  # source metadata, e.g. {"periods": (24,)} or {"system": "Lorenz", ...}
 
     @classmethod
@@ -37,6 +38,7 @@ class Sample:
         context_length: int,
         covariate: np.ndarray | None = None,
         covariate_names: Sequence[str] = (),
+        season_length: int = 1,
         **info,
     ) -> "Sample":
         """Wrap any (T + H,) series, e.g. a real one, so it can go through an Injector."""
@@ -47,11 +49,14 @@ class Sample:
             raise ValueError("covariate must have shape (T + H, C)")
         if covariate is not None and len(covariate_names) != covariate.shape[1]:
             raise ValueError("need one covariate name per covariate column")
+        if season_length < 1:
+            raise ValueError("season_length must be >= 1")
         return cls(
             context=series[:context_length],
             target=series[context_length:],
             covariate=covariate,
             covariate_names=tuple(covariate_names),
+            season_length=int(season_length),
             info=info,
         )
 
@@ -79,7 +84,7 @@ def stack_samples(samples: Sequence[Sample]) -> dict[str, np.ndarray | None]:
 
     Returns context (B, T), target (B, H), covariate (B, T + H, C) or None,
     shift_point (B,) with -1 where no shift was applied (start of the first episode),
-    and shift_mask (B, T + H), True while a shift episode is active.
+    shift_mask (B, T + H), True while a shift episode is active, and season_length (B,).
     """
     has_cov = {s.covariate is not None for s in samples}
     if len(has_cov) != 1:
@@ -90,6 +95,7 @@ def stack_samples(samples: Sequence[Sample]) -> dict[str, np.ndarray | None]:
         "covariate": np.stack([s.covariate for s in samples]) if has_cov == {True} else None,
         "shift_point": np.array([-1 if s.shift_point is None else s.shift_point for s in samples]),
         "shift_mask": np.stack([s.shift_mask for s in samples]),
+        "season_length": np.array([s.season_length for s in samples]),
     }
 
 

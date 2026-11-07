@@ -92,7 +92,8 @@ class ForecastModel:
             model's native levels (AutoARIMA then uses DEFAULT_QUANTILE_LEVELS).
         device: torch device for the neural models, defaults to cuda if available.
         checkpoint: override the Hugging Face repo id / local path of a neural model.
-        season_length: AutoARIMA season length.
+        season_length: AutoARIMA season length for all samples; None uses each sample's own
+            Sample.season_length (samples with different season lengths are fitted in groups).
         batch_size: series per forward pass of the neural models.
     """
 
@@ -103,7 +104,7 @@ class ForecastModel:
         quantile_levels: Sequence[float] | None = DEFAULT_QUANTILE_LEVELS,
         device: str | None = None,
         checkpoint: str | None = None,
-        season_length: int = 1,
+        season_length: int | None = None,
         batch_size: int = 256,
     ) -> None:
         if name not in MODELS:
@@ -116,7 +117,7 @@ class ForecastModel:
                 raise ValueError(f"quantile_levels must be strictly increasing in (0, 1), got {quantile_levels}")
             if not np.isclose(q, 0.5).any():
                 raise ValueError("quantile_levels must contain the median 0.5")
-        if season_length < 1:
+        if season_length is not None and season_length < 1:
             raise ValueError(f"season_length must be >= 1, got {season_length}")
         if batch_size < 1:
             raise ValueError(f"batch_size must be >= 1, got {batch_size}")
@@ -161,10 +162,7 @@ class ForecastModel:
 
     def _load(self):
         if self.name == "autoarima":
-            from statsforecast import StatsForecast
-            from statsforecast.models import AutoARIMA
-
-            return StatsForecast(models=[AutoARIMA(season_length=self.season_length)], freq=1)
+            return None  # one StatsForecast per season length, built in _forecast_autoarima
         if self.name == "chronos2":
             from chronos import Chronos2Pipeline
 
@@ -226,16 +224,25 @@ class ForecastModel:
                 if not np.isclose(c, round(c)):
                     raise ValueError(f"AutoARIMA needs quantile levels on a 0.005 grid, got {q}")
                 coverages[q] = round(c)
-        df, X_df, _ = samples_to_sf_inputs(samples)
-        fc = self.model.forecast(df=df, h=H, X_df=X_df, level=sorted(set(coverages.values())), **predict_kwargs)
-        # statsforecast sorts unique_id as strings ("0", "1", "10", ...): restore sample order
-        fc = fc.sort(fc["unique_id"].cast(int), "ds")
+        from statsforecast import StatsForecast
+        from statsforecast.models import AutoARIMA
+
         columns = [
             "AutoARIMA" if q not in coverages else f"AutoARIMA-{'lo' if q < 0.5 else 'hi'}-{coverages[q]}"
             for q in levels
         ]
-        values = fc.select(columns).to_numpy()  # (B * H, Q)
-        return values.reshape(len(samples), H, len(levels)).transpose(0, 2, 1)
+        seasons = np.array([self.season_length or s.season_length for s in samples])  # (B,)
+        out = np.empty((len(samples), len(levels), H))  # (B, Q, H)
+        for m in np.unique(seasons):
+            idx = np.flatnonzero(seasons == m)
+            df, X_df, _ = samples_to_sf_inputs([samples[i] for i in idx])
+            sf = StatsForecast(models=[AutoARIMA(season_length=int(m))], freq=1)
+            fc = sf.forecast(df=df, h=H, X_df=X_df, level=sorted(set(coverages.values())), **predict_kwargs)
+            # statsforecast sorts unique_id as strings ("0", "1", "10", ...): restore sample order
+            fc = fc.sort(fc["unique_id"].cast(int), "ds")
+            values = fc.select(columns).to_numpy()  # (B_m * H, Q)
+            out[idx] = values.reshape(len(idx), H, len(levels)).transpose(0, 2, 1)
+        return out
 
     def _forecast_chronos2(self, samples, H, levels, **predict_kwargs) -> np.ndarray:
         inputs, _ = samples_to_chronos2_inputs(samples)

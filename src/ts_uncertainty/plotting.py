@@ -125,8 +125,12 @@ def plot_sample(
     subtitle = []
     if sample.info.get("system"):
         subtitle.append(f"system: {sample.info['system']}")
+    if sample.info.get("series_name"):
+        subtitle.append(f"series: {sample.info['series_name']}")
     if sample.info.get("periods"):
         subtitle.append("periods: " + ", ".join(str(p) for p in sample.info["periods"]))
+    if sample.season_length > 1:
+        subtitle.append(f"season: {sample.season_length}")
     if sample.shift_episodes:
         spans = ", ".join(f"{start}" if end == len(y) else f"{start}–{end - 1}" for start, end in sample.shift_episodes)
         subtitle.append(f"{sample.shift_type} shift at t = {spans}")

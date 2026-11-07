@@ -42,7 +42,7 @@ from ts_uncertainty.injection import (
     scale_factor,
     signed,
 )
-from ts_uncertainty.sample import Sample, stack_samples
+from ts_uncertainty.sample import Sample
 
 DYNAMICS_SHIFT_TYPES = ("timescale", "parameter")
 
@@ -89,6 +89,8 @@ class ChaoticGenerator:
             system dimension).
         pts_per_period_range: range of time steps per dominant period of the system; small
             values make the series look more irregular, large values smoother.
+        period_as_season: set season_length to round(pts_per_period) instead of 1. The flows are
+            aperiodic, so this is only a quasi-period (the dominant period of the spectrum).
         burn_in_periods: dominant periods integrated and discarded so the trajectory starts on
             the attractor.
         ic_noise: relative perturbation of the dysts default initial condition.
@@ -117,6 +119,7 @@ class ChaoticGenerator:
         systems: Sequence[str] | None = None,
         dim: int | None = None,
         pts_per_period_range: tuple[float, float] = (20.0, 60.0),
+        period_as_season: bool = False,
         burn_in_periods: float = 20.0,
         ic_noise: float = 0.1,
         level_range: tuple[float, float] = (-1.0, 1.0),
@@ -151,6 +154,7 @@ class ChaoticGenerator:
         self.systems = tuple(systems)
         self.dim = dim
         self.pts_per_period_range = pts_per_period_range
+        self.period_as_season = period_as_season
         self.burn_in_periods = burn_in_periods
         self.ic_noise = ic_noise
         self.level_range = level_range
@@ -267,13 +271,13 @@ class ChaoticGenerator:
             shift_type=shift_type,
             shift_episodes=tuple(episodes),
             shift_info=shift_info,
+            season_length=round(ppp) if self.period_as_season else 1,  # aperiodic: no fixed season
             info={"system": name, "dim": d, "pts_per_period": float(ppp)},
         )
 
-    def sample_batch(self, batch_size: int) -> dict[str, np.ndarray | None]:
-        """Stack batch_size clean samples, see stack_samples; plus 'system' (B,)."""
-        samples = [self.sample() for _ in range(batch_size)]
-        return stack_samples(samples) | {"system": np.array([s.info["system"] for s in samples])}
+    def sample_batch(self, batch_size: int) -> list[Sample]:
+        """List of batch_size samples; use stack_samples to get stacked arrays."""
+        return [self.sample() for _ in range(batch_size)]
 
     # ------------------------------------------------------------------ dynamics
 
