@@ -8,8 +8,8 @@ series via Sample.from_series) to a perturbed one, in this order:
     3. spikes  y_t += spikes_t, sparse outliers with random sign
 
 and appends known-in-advance indicator covariates over T + H: a step indicator of the
-shift episodes and a pulse indicator of the spikes. The indicators say *when* something
-happens, never its type or magnitude.
+shift episodes and a signed pulse indicator of the spikes (+1 up, -1 down). The indicators
+say *when* something happens (and for spikes the direction), never the type or magnitude.
 
 Shift types (all work on any series):
 
@@ -60,7 +60,8 @@ class Injector:
             has a shift (e.g. a dynamics shift from ChaoticGenerator) keeps it and gets none.
         shift_covariate: append an indicator that is 1 while a shift episode is active
             (all zeros if the sample has no shift). Also marks shifts made by the source.
-        spike_covariate: append a pulse indicator that is 1 at spike positions (requires spikes).
+        spike_covariate: append a signed pulse indicator that is +1 at upward and -1 at
+            downward spikes, 0 elsewhere (requires spikes).
         noise_std_range: range of the Gaussian observation noise std.
         noise_region: where noise is added: "both" (T + H), "context" or "horizon".
         spike_prob: per-time-step probability of a spike (ignored if spike_period is set).
@@ -244,18 +245,20 @@ class Injector:
             y += rng.normal(0.0, noise_std * noisy)
 
         spike_idx = sample.spike_idx
+        spike_heights = np.zeros(0)  # (n_spikes,), signed heights added at spike_idx
         if self.spikes:
             allowed = _region_mask(self.spike_region, T, H)
             if self.spike_period is None:
                 spike_idx = np.flatnonzero((rng.random(length) < self.spike_prob) & allowed)
-                y[spike_idx] += [scale * signed(rng, self.spike_magnitude_range) for _ in spike_idx]
+                spike_heights = np.array([scale * signed(rng, self.spike_magnitude_range) for _ in spike_idx])
             else:
                 # phase over the whole window, so the pattern continues across the forecast start
                 phase = int(rng.integers(0, self.spike_period))
                 periodic = np.zeros(length, dtype=bool)
                 periodic[phase :: self.spike_period] = True
                 spike_idx = np.flatnonzero(periodic & allowed)
-                y[spike_idx] += scale * signed(rng, self.spike_magnitude_range)
+                spike_heights = np.full(len(spike_idx), scale * signed(rng, self.spike_magnitude_range))
+            y[spike_idx] += spike_heights
 
         covariates = [] if sample.covariate is None else [sample.covariate]  # each (T + H, c)
         covariate_names = list(sample.covariate_names)
@@ -264,7 +267,7 @@ class Injector:
             covariate_names.append("shift")
         if self.spike_covariate:
             spike_indicator = np.zeros((length, 1))
-            spike_indicator[spike_idx] = 1.0
+            spike_indicator[spike_idx, 0] = np.sign(spike_heights)
             covariates.append(spike_indicator)
             covariate_names.append("spike")
         covariate = np.concatenate(covariates, axis=1).astype(np.float32) if covariates else None

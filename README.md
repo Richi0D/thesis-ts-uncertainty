@@ -115,7 +115,7 @@ Series without a valid window are dropped (`sampler.series_ids` lists the rest).
 | `shift` | `False` | One abrupt distribution shift at a random change point τ (see below). |
 | `shift_covariate` | `False` | Adds an indicator covariate over T + H that is 1 while a shift episode is active (all zeros if the series has no shift). It marks when the regime changes, but not the shift type or magnitude. It also marks dynamics shifts from `ChaoticGenerator`. |
 | `relative` | `False` | Multiplies all additive magnitudes (noise std, spike height, level jump, slope change) by the std of the clean context, stored as `info["injection_scale"]`. Use it for unnormalised series of any scale, e.g. `RealSampler(normalize="none")`. Models that standardise with the context then see the same perturbation strength on every series. Scale factors (`shift_scale_range`) are already relative. `inj(sample, relative=True)` overrides it per sample, so one injector can serve normalised and unnormalised sources. |
-| `spike_covariate` | `False` | Adds a pulse-indicator covariate that is 1 at spike positions over T + H, like a known event calendar. It does not give the spike sign or height. Requires `spikes=True`. |
+| `spike_covariate` | `False` | Adds a signed pulse-indicator covariate over T + H that is +1 at upward and −1 at downward spikes (0 elsewhere), like a known event calendar with the event direction. It does not give the spike height. Requires `spikes=True`. |
 
 Indicator covariates are appended after any covariates the source already returned.
 
