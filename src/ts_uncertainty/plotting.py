@@ -1,12 +1,16 @@
 """Plotting utilities (Altair)."""
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING
 
 import altair as alt
 import numpy as np
 import polars as pl
 
 from ts_uncertainty.sample import Sample
+
+if TYPE_CHECKING:
+    from ts_uncertainty.forecasting import QuantileForecast
 
 # categorical slots in fixed order, colour follows the entity
 SERIES_COLORS = {"context": "#2a78d6", "target": "#eb6834", "forecast": "#8a4fd1", "spike": "#1baf7a"}
@@ -184,6 +188,49 @@ def plot_sample(
             )
         )
     )
+
+
+def plot_forecasts(
+    sample: Sample,
+    forecasts: Mapping[str, "QuantileForecast"],
+    index: int,
+    exclude_from_y: Sequence[str] = (),
+    width: int = 1000,
+    height: int = 200,
+    pad: float = 0.05,
+) -> alt.TopLevelMixin:
+    """Stack one panel per model, each showing sample with that model's forecast of it.
+
+    All panels share one y-range, taken from the sample and every forecast except those
+    named in exclude_from_y (e.g. a model whose wide bands would squash the others).
+
+    Args:
+        sample: the series that was forecast, i.e. samples[index].
+        forecasts: model name -> QuantileForecast over the batch that contains sample.
+        index: position of sample in that batch.
+        pad: margin added above and below the y-range, as a fraction of its span.
+    """
+    vals = [sample.context, sample.target] + [
+        np.asarray(fc.quantiles[index]).ravel() for name, fc in forecasts.items() if name not in exclude_from_y
+    ]
+    lo, hi = float(min(v.min() for v in vals)), float(max(v.max() for v in vals))
+    margin = pad * (hi - lo)
+    y_domain = (lo - margin, hi + margin)
+
+    charts = []
+    for name, fc in forecasts.items():
+        c = plot_sample(
+            sample,
+            prediction=fc.quantiles[index],  # (Q, H)
+            quantiles=fc.quantile_levels,
+            title=name,
+            width=width,
+            height=height,
+            y_domain=y_domain,
+        )
+        c.config = alt.Undefined  # styling is applied once to the concatenation
+        charts.append(c)
+    return _style(alt.concat(*charts, columns=1, spacing=24))
 
 
 def _forecast_frame(

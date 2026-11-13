@@ -108,9 +108,13 @@ Series without a valid window are dropped (`sampler.series_ids` lists the rest).
 | Option | Default | Description |
 | --- | --- | --- |
 | `noise` | `True` | Gaussian observation noise, with std drawn from `noise_std_range`. |
+| `noise_region` | `"both"` | Where noise is added: `"both"` (T + H), `"context"` or `"horizon"`. |
 | `spikes` | `False` | Each time step gets a spike with probability `spike_prob`. Spike heights are drawn from `spike_magnitude_range` and can be positive or negative. |
+| `spike_region` | `"both"` | Where spikes may occur: `"both"` (T + H), `"context"` or `"horizon"`. |
+| `spike_period` | `None` | If set, spikes occur every `spike_period` steps from a random phase (over the whole window, so the pattern continues across the forecast start) instead of at random steps. All periodic spikes of a series share one height and sign, so the pattern can be learned from the context. `spike_prob` is then ignored. |
 | `shift` | `False` | One abrupt distribution shift at a random change point τ (see below). |
 | `shift_covariate` | `False` | Adds an indicator covariate over T + H that is 1 while a shift episode is active (all zeros if the series has no shift). It marks when the regime changes, but not the shift type or magnitude. It also marks dynamics shifts from `ChaoticGenerator`. |
+| `relative` | `False` | Multiplies all additive magnitudes (noise std, spike height, level jump, slope change) by the std of the clean context, stored as `info["injection_scale"]`. Use it for unnormalised series of any scale, e.g. `RealSampler(normalize="none")`. Models that standardise with the context then see the same perturbation strength on every series. Scale factors (`shift_scale_range`) are already relative. `inj(sample, relative=True)` overrides it per sample, so one injector can serve normalised and unnormalised sources. |
 | `spike_covariate` | `False` | Adds a pulse-indicator covariate that is 1 at spike positions over T + H, like a known event calendar. It does not give the spike sign or height. Requires `spikes=True`. |
 
 Indicator covariates are appended after any covariates the source already returned.
@@ -118,6 +122,17 @@ Indicator covariates are appended after any covariates the source already return
 ### Distribution Shift
 
 The change point τ is drawn from `shift_position_range`, given as a fraction of T + H (default 0.5–1.0). With the default range, a shift can therefore appear either in the context, where the model can react to it, or only in the forecast horizon, where the model cannot see it and its uncertainty estimates are put to the test. Use `shift_position_range=(T / (T + H), 1.0)` to place shifts only in the horizon.
+
+`shift_region` places a (non-recurring) shift more explicitly. `shift_position_range` is then a fraction of that region:
+
+| `shift_region` | Change point τ | Episode |
+| --- | --- | --- |
+| `"any"` (default) | in T + H | τ to the end of the window |
+| `"horizon"` | in the horizon | τ to the end of the window; never visible in the context |
+| `"context"` | in the context | τ to the forecast start; the horizon is back to normal |
+| `"both"` | in the context | τ to the end of the window; visible in the context and persists |
+
+With the default range (0.5–1.0), `"horizon"` puts τ in the second half of the horizon; use `shift_position_range=(0.0, 1.0)` to cover all of it. Any region other than `"any"` requires `shift_recurring_prob=0`.
 
 For each series, the injector draws one shift type from `shift_types`:
 
@@ -128,7 +143,7 @@ For each series, the injector draws one shift type from `shift_types`:
 | `noise` | noise std is multiplied or divided by a factor | `shift_scale_range` |
 | `amplitude` | deviation from the linear trend (fitted outside the shift) is multiplied or divided by a factor | `shift_scale_range` |
 
-`noise` with `noise=False` adds noise only during the shift. `amplitude` on a series without a periodic or chaotic component has almost no effect. The default magnitude ranges assume the series has a scale of about 1. For other series, standardise first, or rescale the shift and spike ranges.
+`noise` with `noise=False` adds noise only during the shift. `amplitude` on a series without a periodic or chaotic component has almost no effect. The default magnitude ranges assume the series has a scale of about 1. For other series, use `relative=True`, standardise first, or rescale the shift and spike ranges.
 
 `inj(sample, shift_point=0.6, shift_type="level")` forces a specific shift on one sample, even with `shift=False`.
 
