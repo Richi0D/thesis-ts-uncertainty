@@ -113,11 +113,19 @@ Series without a valid window are dropped (`sampler.series_ids` lists the rest).
 | `spike_region` | `"both"` | Where spikes may occur: `"both"` (T + H), `"context"` or `"horizon"`. |
 | `spike_period` | `None` | If set, spikes occur every `spike_period` steps from a random phase (over the whole window, so the pattern continues across the forecast start) instead of at random steps. All periodic spikes of a series share one height and sign, so the pattern can be learned from the context. `spike_prob` is then ignored. |
 | `shift` | `False` | One abrupt distribution shift at a random change point τ (see below). |
-| `shift_covariate` | `False` | Adds an indicator covariate over T + H that is 1 while a shift episode is active (all zeros if the series has no shift). It marks when the regime changes, but not the shift type or magnitude. It also marks dynamics shifts from `ChaoticGenerator`. |
+| `shift_covariate` | `False` | Adds shift covariates over T + H (all zeros if the series has no shift). `True` means `"step"`; a string or a list of variants adds one column each, in the given order (see the table below). |
 | `relative` | `False` | Multiplies all additive magnitudes (noise std, spike height, level jump, slope change) by the std of the clean context, stored as `info["injection_scale"]`. Use it for unnormalised series of any scale, e.g. `RealSampler(normalize="none")`. Models that standardise with the context then see the same perturbation strength on every series. Scale factors (`shift_scale_range`) are already relative. `inj(sample, relative=True)` overrides it per sample, so one injector can serve normalised and unnormalised sources. |
 | `spike_covariate` | `False` | Adds a signed pulse-indicator covariate over T + H that is +1 at upward and −1 at downward spikes (0 elsewhere), like a known event calendar with the event direction. It does not give the spike height. Requires `spikes=True`. |
 
 Indicator covariates are appended after any covariates the source already returned.
+
+| `shift_covariate` variant | Column | Value |
+| --- | --- | --- |
+| `"step"` | `shift` | 1 while a shift episode is active, 0 elsewhere. It marks when the regime changes, but not the shift type or magnitude. |
+| `"ramp"` | `shift_ramp` | (t − start) / (T + H) inside each episode, 0 elsewhere. It grows steadily with the time since the shift started, like the added trend of a `trend` shift, but gives neither direction nor magnitude. |
+| `"effect"` | `shift_effect` | The exact signed shift profile (an oracle): δ while active for `level`, δ_slope · (t − start) for `trend` (the added trend itself), log(factor) while active for `noise` / `amplitude`. |
+
+`"step"` and `"ramp"` also mark dynamics shifts from `ChaoticGenerator`; for those `"effect"` falls back to the step. Example: `Injector(shift=True, shift_covariate=["step", "ramp", "effect"])`.
 
 ### Distribution Shift
 
@@ -145,7 +153,7 @@ For each series, the injector draws one shift type from `shift_types`:
 
 `noise` with `noise=False` adds noise only during the shift. `amplitude` on a series without a periodic or chaotic component has almost no effect. The default magnitude ranges assume the series has a scale of about 1. For other series, use `relative=True`, standardise first, or rescale the shift and spike ranges.
 
-`inj(sample, shift_point=0.6, shift_type="level")` forces a specific shift on one sample, even with `shift=False`.
+`inj(sample, shift_point=0.6, shift_type="level", shift_sign=1)` forces a specific shift on one sample, even with `shift=False`. `shift_sign` fixes the direction: `+1` shifts the level or slope up or multiplies the noise / amplitude by the factor, `-1` shifts down or divides by it; `None` (default) picks the direction at random.
 
 #### Recurring Shifts
 
@@ -170,7 +178,7 @@ General question: does more context help?
 
 Only a single univariate time series.
 
-1. Inject noise only into the forecast horizon. Assumption: models can not detect noise. Never appear in context. Uncertainty should stay same but error increase.
+1. Inject noise only into the forecast horizon. Assumption: models can not detect noise. Never appear in context. Same forecast as without injection, error increase.
 2. Inject noise only into the context horizon. Assumption: models will halucinate and predict noise. Uncertainty should increase.
 3. Inject noise into context and forecast horizon. Assumption: models should detect noise. Uncertainty should increase due to noise.
 
@@ -180,19 +188,19 @@ Only a single univariate time series.
 
 Only a single univariate time series.
 
-1. Inject spikes only into the forecast horizon. Assumption: models can not detect spikes. Never appear in context. Uncertainty should stay same.
+1. Inject spikes only into the forecast horizon. Assumption: models can not detect spikes. Never appear in context. Same forecast as without injection, error increase.
 2. Inject spikes only into the context horizon. Assumption: models will halucinate and predict random spikes. Uncertainty should increase.
-3. Inject spikes into context and forecast horizon. (at a defined period). Assumption: models should detect spikes. Uncertainty should decrease at spikes.
+3. Inject spikes into context and forecast horizon. (at a defined period). Assumption: models should detect spikes. Uncertainty should increase.
 4. Inject spikes into context and forecast horizon. (at random timesteps). Assumption: models can not detect it. Uncertainty should increase.
 
 #### Univariate case with covariates
 
 A single univariate time series with a covariate (1/0) for spikes.
 
-1. Inject spikes only into the forecast horizon. Assumption: models can detect spikes with the covariate. Uncertainty should decrease.
-2. Inject spikes only into the context horizon. Assumption: models will know there are not spikes due to covariate. Uncertainty should decrease.
-3. Inject spikes into context and forecast horizon. (at a defined period). Assumption: models should detect spikes. Uncertainty should decrease at spikes.
-4. Inject spikes into context and forecast horizon. (at random timesteps). Assumption: models will know there are spikes due to covariate. Uncertainty should decrease.
+1. Inject spikes only into the forecast horizon. Assumption: models can detect spikes with the covariate. Uncertainty should increase.
+2. Inject spikes only into the context horizon. Assumption: models will know there are not spikes due to covariate. Uncertainty should stay same.
+3. Inject spikes into context and forecast horizon. (at a defined period). Assumption: models should detect spikes. Uncertainty should increase.
+4. Inject spikes into context and forecast horizon. (at random timesteps). Assumption: models will know there are spikes due to covariate. Uncertainty should increase.
 
 ### Continous Shift
 
@@ -200,17 +208,19 @@ A single univariate time series with a covariate (1/0) for spikes.
 
 Only a single univariate time series.
 
-1. Inject shift only into the forecast horizon. Assumption: models can not detect shift. Never appear in context. Uncertainty should stay same.
+1. Inject shift only into the forecast horizon. Assumption: models can not detect shift. Never appear in context. Same forecast as without injection, error increase.
 2. Inject shift only into the context horizon. Assumption: models will halucinate and predict shift which then not appear. Uncertainty should increase.
-3. Inject shift into context and forecast horizon. Assumption: models should detect shift. Uncertainty should decrease.
+3. Inject shift into context and forecast horizon. Assumption: models should detect shift. Uncertainty should increase.
+4. Inject reccurent shift patterns. Assumption: models should detect shift. Uncertainty should increase.
 
 #### Univariate case with covariates
 
 A single univariate time series with a covariate for shift.
 
-1. Inject shift only into the forecast horizon. Assumption: models can detect shift with the covariate. Uncertainty should decrease.
+1. Inject shift only into the forecast horizon. Assumption: models can detect shift with the covariate. Uncertainty should increase.
 2. Inject shift only into the context horizon. Assumption: models will know there is no shift due to covariate. Uncertainty should increase.
-3. Inject shift into context and forecast horizon. Assumption: models should detect shift. Uncertainty should decrease.
+3. Inject shift into context and forecast horizon. Assumption: models should detect shift. Uncertainty should increase.
+4. Inject reccurent shift patterns. Assumption: models should detect shift. Uncertainty should increase.
 
 
 ### Autoregressive prediction

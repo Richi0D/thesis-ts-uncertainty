@@ -19,6 +19,8 @@ TEXT_PRIMARY = "#0b0b0b"
 TEXT_SECONDARY = "#52514e"
 GRIDLINE = "#e1e0d9"
 MUTED = "#8a8984"
+# categorical slots for models, assigned in the order the models are given
+MODEL_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#8a4fd1", "#d6a32a", "#d1497a", "#3fb6c4", "#52514e"]
 
 
 def plot_sample(
@@ -231,6 +233,78 @@ def plot_forecasts(
         c.config = alt.Undefined  # styling is applied once to the concatenation
         charts.append(c)
     return _style(alt.concat(*charts, columns=1, spacing=24))
+
+
+def plot_scores_per_sample(
+    scores: Sequence[np.ndarray],
+    model_names: Sequence[str],
+    x: Sequence[float] | None = None,
+    x_title: str = "sample",
+    y_title: str = "MASE",
+    forecast_start: float | None = None,
+    log_y: bool = False,
+    title: str | None = None,
+    width: int = 800,
+    height: int = 300,
+) -> alt.TopLevelMixin:
+    """One line per model of its per-sample score, coloured by model.
+
+    Args:
+        scores: one array of per-sample scores (B,) per model, in the order of model_names
+            (e.g. scores_mase_per_sample from evaluate_models_on_samples).
+        model_names: model names, e.g. list(models.keys()).
+        x: x value per sample (e.g. the shift points); defaults to the sample index.
+        forecast_start: x value of the beginning of the horizon (in the units of x), marked
+            with a vertical line like in plot_sample; None draws no line.
+        log_y: logarithmic y axis (scores must be > 0).
+    """
+    if len(scores) != len(model_names):
+        raise ValueError(f"got {len(scores)} score arrays but {len(model_names)} model names")
+    names = list(model_names)
+    frames = []
+    for name, s in zip(names, scores):
+        s = np.asarray(s, dtype=np.float64).ravel()  # (B,)
+        xs = np.arange(len(s)) if x is None else np.asarray(x, dtype=np.float64)
+        if len(xs) != len(s):
+            raise ValueError(f"x has {len(xs)} values but model {name!r} has {len(s)} scores")
+        frames.append(pl.DataFrame({"x": xs, "score": s, "model": name}))
+    df = pl.concat(frames)
+
+    color = alt.Color(
+        "model:N",
+        sort=names,
+        scale=alt.Scale(domain=names, range=[MODEL_COLORS[i % len(MODEL_COLORS)] for i in range(len(names))]),
+        legend=alt.Legend(title=None, orient="top"),
+    )
+    hover = alt.selection_point(fields=["x"], nearest=True, on="pointerover", empty=False, clear="pointerout")
+    base = alt.Chart(df).encode(
+        x=alt.X("x:Q", title=x_title, scale=alt.Scale(nice=False)),
+        y=alt.Y("score:Q", title=y_title, scale=alt.Scale(type="log") if log_y else alt.Undefined),
+        color=color,
+    )
+    lines = base.mark_line(strokeWidth=2)
+    points = base.mark_point(filled=True, size=40).encode(
+        opacity=alt.condition(hover, alt.value(1), alt.value(0)),
+        tooltip=[alt.Tooltip("model:N"), alt.Tooltip("x:Q", title=x_title), alt.Tooltip("score:Q", format=".3f")],
+    ).add_params(hover)
+    rule = alt.Chart(df).mark_rule(color=MUTED).encode(x="x:Q").transform_filter(hover)
+    layers = [lines, points, rule]
+    if forecast_start is not None:
+        start_df = pl.DataFrame({"x": [float(forecast_start)], "label": ["forecast start"]})
+        layers.append(
+            alt.Chart(start_df)
+            .mark_rule(strokeWidth=1.5, color=TEXT_SECONDARY)
+            .encode(x="x:Q", tooltip=[alt.Tooltip("label:N", title="event")])
+        )
+        layers.append(
+            alt.Chart(start_df)
+            .mark_text(align="left", baseline="top", dx=4, fontSize=11, color=TEXT_SECONDARY)
+            .encode(x="x:Q", y=alt.value(4), text="label:N")
+        )
+    chart = alt.layer(*layers).properties(width=width, height=height)
+    if title is not None:
+        chart = chart.properties(title=title)
+    return _style(chart)
 
 
 def _forecast_frame(

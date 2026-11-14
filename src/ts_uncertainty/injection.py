@@ -7,9 +7,10 @@ series via Sample.from_series) to a perturbed one, in this order:
     2. noise   y_t += noise_t, Gaussian with a std drawn per sample
     3. spikes  y_t += spikes_t, sparse outliers with random sign
 
-and appends known-in-advance indicator covariates over T + H: a step indicator of the
-shift episodes and a signed pulse indicator of the spikes (+1 up, -1 down). The indicators
-say *when* something happens (and for spikes the direction), never the type or magnitude.
+and appends known-in-advance covariates over T + H: shift covariates (a step indicator of
+the shift episodes, a ramp of the time since the episode start, and / or the exact signed
+shift profile as an oracle) and a signed pulse indicator of the spikes (+1 up, -1 down).
+The step and ramp say *when* a shift happens, never its type or magnitude.
 
 Shift types (all work on any series):
 
@@ -48,6 +49,7 @@ from ts_uncertainty.sample import Sample
 SHIFT_TYPES = ("level", "trend", "noise", "amplitude")
 REGIONS = ("both", "context", "horizon")
 SHIFT_REGIONS = ("any", *REGIONS)
+SHIFT_COVARIATES = ("step", "ramp", "effect")  # covariate names: shift, shift_ramp, shift_effect
 
 
 class Injector:
@@ -58,8 +60,19 @@ class Injector:
         spikes: add sparse random spikes (outliers).
         shift: apply a distribution shift at a random change point. A sample that already
             has a shift (e.g. a dynamics shift from ChaoticGenerator) keeps it and gets none.
-        shift_covariate: append an indicator that is 1 while a shift episode is active
-            (all zeros if the sample has no shift). Also marks shifts made by the source.
+        shift_covariate: append shift covariates over T + H (all zeros if the sample has no
+            shift). True means "step"; a string or a sequence of SHIFT_COVARIATES picks variants,
+            one column each, in the given order:
+            "step"   ("shift")        1 while a shift episode is active, 0 elsewhere.
+            "ramp"   ("shift_ramp")   (t - start) / (T + H) inside each episode, 0 elsewhere:
+                                      grows steadily with time since the shift started, but
+                                      gives neither the direction nor the magnitude.
+            "effect" ("shift_effect") the exact signed shift profile (oracle): delta while
+                                      active for level, delta_slope * (t - start) for trend
+                                      (the added trend itself), log(factor) while active for
+                                      noise / amplitude. Shifts made by the source (e.g.
+                                      ChaoticGenerator dynamics) fall back to the step.
+            "step" and "ramp" also mark shifts made by the source.
         spike_covariate: append a signed pulse indicator that is +1 at upward and -1 at
             downward spikes, 0 elsewhere (requires spikes).
         noise_std_range: range of the Gaussian observation noise std.
@@ -97,7 +110,7 @@ class Injector:
         noise: bool = True,
         spikes: bool = False,
         shift: bool = False,
-        shift_covariate: bool = False,
+        shift_covariate: bool | str | Sequence[str] = False,
         spike_covariate: bool = False,
         noise_std_range: tuple[float, float] = (0.05, 0.3),
         noise_region: str = "both",
@@ -116,6 +129,17 @@ class Injector:
         relative: bool = False,
         seed: int | None = None,
     ):
+        if shift_covariate is True:
+            shift_covariate = ("step",)
+        elif not shift_covariate:
+            shift_covariate = ()
+        elif isinstance(shift_covariate, str):
+            shift_covariate = (shift_covariate,)
+        shift_covariate = tuple(shift_covariate)
+        if unknown := set(shift_covariate) - set(SHIFT_COVARIATES):
+            raise ValueError(f"unknown shift covariates {unknown}, choose from {SHIFT_COVARIATES}")
+        if len(set(shift_covariate)) != len(shift_covariate):
+            raise ValueError(f"duplicate shift covariates in {shift_covariate}")
         if spike_covariate and not spikes:
             raise ValueError("spike_covariate=True requires spikes=True")
         if unknown := set(shift_types) - set(SHIFT_TYPES):
@@ -138,7 +162,7 @@ class Injector:
         self.noise = noise
         self.spikes = spikes
         self.shift = shift
-        self.shift_covariate = shift_covariate
+        self.shift_covariate = shift_covariate  # tuple of SHIFT_COVARIATES, empty for none
         self.spike_covariate = spike_covariate
         self.noise_std_range = noise_std_range
         self.noise_region = noise_region
@@ -164,6 +188,7 @@ class Injector:
         shift_type: str | None = None,
         recurring: bool | None = None,
         shift_episodes: Sequence[tuple[float, float]] | None = None,
+        shift_sign: int | None = None,
         relative: bool | None = None,
     ) -> Sample:
         """Return a perturbed copy of sample.
@@ -182,6 +207,8 @@ class Injector:
             shift_episodes: explicit (start, end) episodes as fractions of T + H in [0, 1],
                 sorted and non-overlapping, all with the same shift type and magnitude.
                 Can't be combined with shift_point or recurring.
+            shift_sign: +1 for an upward shift (level/slope up, noise/amplitude factor >= 1),
+                -1 for a downward one (factor <= 1); random if None.
             relative: overrides the injector's relative setting for this sample, e.g.
                 True for an unnormalised real sample with an injector shared across sources.
         """
@@ -192,7 +219,12 @@ class Injector:
         relative = self.relative if relative is None else relative
         scale = _context_scale(y[:T]) if relative else 1.0  # unit of all additive magnitudes
 
-        forced = shift_point is not None or shift_type is not None or recurring or shift_episodes is not None
+        if shift_sign not in (None, 1, -1):
+            raise ValueError(f"shift_sign {shift_sign} must be +1, -1 or None")
+        forced = (
+            shift_point is not None or shift_type is not None or recurring
+            or shift_episodes is not None or shift_sign is not None
+        )
         if forced and sample.shift_type is not None:
             raise ValueError(f"sample already has a {sample.shift_type} shift, only one shift per sample")
 
@@ -219,28 +251,33 @@ class Injector:
             active[start:end] = True
             ramp[start:end] = np.arange(end - start)
 
+        effect = active.astype(np.float64)  # signed shift profile, step for source shifts
         if own_shift == "level":
-            delta = scale * signed(rng, self.shift_level_range)
-            y += delta * active
+            delta = scale * signed(rng, self.shift_level_range, shift_sign)
+            effect = delta * active
+            y += effect
             shift_info = {"delta": delta}
         elif own_shift == "trend":
-            delta = scale * signed(rng, self.shift_slope_range)
-            y += delta * ramp
+            delta = scale * signed(rng, self.shift_slope_range, shift_sign)
+            effect = delta * ramp
+            y += effect
             shift_info = {"delta_slope": delta}
         elif own_shift == "amplitude":
-            factor = scale_factor(rng, self.shift_scale_range)
+            factor = scale_factor(rng, self.shift_scale_range, shift_sign)
             baseline = _linear_fit(y, ~active if (~active).sum() >= 2 else np.ones(length, dtype=bool))
             y = np.where(active, baseline + factor * (y - baseline), y)
+            effect = np.log(factor) * active
             shift_info = {"factor": factor}
 
         if self.noise or own_shift == "noise":
             noise_std = np.full(length, scale * rng.uniform(*self.noise_std_range))
             noisy = _region_mask(self.noise_region, T, H) if self.noise else np.zeros(length, dtype=bool)
             if own_shift == "noise":
-                factor = scale_factor(rng, self.shift_scale_range)
+                factor = scale_factor(rng, self.shift_scale_range, shift_sign)
                 if self.noise:
                     noise_std *= np.where(active, factor, 1.0)
                 noisy |= active
+                effect = np.log(factor) * active
                 shift_info = {"factor": factor}
             y += rng.normal(0.0, noise_std * noisy)
 
@@ -262,9 +299,15 @@ class Injector:
 
         covariates = [] if sample.covariate is None else [sample.covariate]  # each (T + H, c)
         covariate_names = list(sample.covariate_names)
-        if self.shift_covariate:
-            covariates.append(active[:, None])
-            covariate_names.append("shift")
+        shift_columns = {  # each (T + H,)
+            "step": ("shift", active),
+            "ramp": ("shift_ramp", ramp / length),
+            "effect": ("shift_effect", effect),
+        }
+        for variant in self.shift_covariate:
+            name, column = shift_columns[variant]
+            covariates.append(column[:, None])
+            covariate_names.append(name)
         if self.spike_covariate:
             spike_indicator = np.zeros((length, 1))
             spike_indicator[spike_idx, 0] = np.sign(spike_heights)
@@ -396,12 +439,15 @@ def _parse_episodes(episodes: Sequence[tuple[float, float]], length: int) -> lis
     return result
 
 
-def signed(rng: np.random.Generator, value_range: tuple[float, float]) -> float:
-    """Magnitude drawn from value_range with a random sign."""
-    return float(rng.choice((-1.0, 1.0)) * rng.uniform(*value_range))
+def signed(rng: np.random.Generator, value_range: tuple[float, float], sign: int | None = None) -> float:
+    """Magnitude drawn from value_range with the given sign (+1 / -1), random if None."""
+    if sign is None:
+        sign = rng.choice((-1.0, 1.0))
+    return float(sign * rng.uniform(*value_range))
 
 
-def scale_factor(rng: np.random.Generator, value_range: tuple[float, float]) -> float:
-    """Scale factor from value_range, inverted with probability 0.5."""
+def scale_factor(rng: np.random.Generator, value_range: tuple[float, float], sign: int | None = None) -> float:
+    """Scale factor from value_range (>= 1), inverted for sign -1; with probability 0.5 if None."""
     factor = rng.uniform(*value_range)
-    return float(factor if rng.random() < 0.5 else 1.0 / factor)
+    up = rng.random() < 0.5 if sign is None else sign > 0
+    return float(factor if up else 1.0 / factor)
