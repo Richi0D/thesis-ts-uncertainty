@@ -1,4 +1,4 @@
-# Uncertainty for Time Series Foundation Models
+# Uncertainty on Time Series Foundation Models
 
 This thesis investigates whether uncertainty estimates from time series foundation models, remain reliable under distribution shift and check certain autoregressive methods in combination with distribution shift.
 
@@ -19,7 +19,7 @@ These are the main models used for the thesis:
 | --- | --- | --- | --- | --- | --- | --- |
 | [AutoTheta](https://www.researchgate.net/publication/294420765_Models_for_optimising_the_theta_method_and_their_relationship_to_state_space_models) | local | fit per series | full history | unrestricted | - | any |
 | [Chronos-2](https://github.com/amazon-science/chronos-forecasting) | zero-shot | 120M | 8192 | 1024 | 16 | 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99 |
-| [TiRex-2](https://github.com/NX-AI/tirex-2) | zero-shot | 38.4M (univariate), 82.5M (multivariate) | 2048 | 320 | 32 | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 |
+| [TiRex-2](https://github.com/NX-AI/tirex-2) | zero-shot | 38.4M (univariate), 82.5M (multivariate) | 2048 | 320 | 32 | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 |Un
 | [Timestral](https://github.com/mistralai/timestral) | zero-shot | 5M, 28M, 123M, 209M | 32,768 | 1024 | 32 | 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99 |
 
 The common setting for experiments that every model can cover is:
