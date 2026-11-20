@@ -4,7 +4,7 @@
 \chapter{Time Series Foundation Models}
 \label{sec:foundationmodels}
 
-Since it was not feasible to test all current available time series foundation models, a selection had to be made. The choice was fallen on three recent models. Chronos-2 (\citeauthor{chronos2}~\cite{chronos2}), TiRex-2 (\citeauthor{tirex2}~\cite{tirex2}) and Timestral (\citeauthor{timestral}~\cite{timestral}). All three models support multivariate forecasting with additional past-known $X^{pcov}$ and future-known $X^{fcov}$ covariates. They also use patching for input processing and return quantile predictions via a quantile head. Each model has its unique feature: Chronos-2 is a encoder-only transformer that follows the design of the T5 encoder (\citeauthor{t5encoder}~\cite{t5encoder}); TiRex-2 builds on xLSTM (\citeauthor{xlstm}~\cite{xlstm}) and allows for efficient streaming with constant memory; Timestral is the most recent transformer, which uses causal temporal modeling, that currently beats every other foundation model on common benchmarks and is pre-trained only on synthetic data. A more detailed introduction to the three models is made in the following subchapters.
+Since it was not feasible to test all current available time series foundation models, a selection had to be made. The choice was fallen on four recent models. Chronos-2 (\citeauthor{chronos2}~\cite{chronos2}), TiRex-2 (\citeauthor{tirex2}~\cite{tirex2}), TimesFM-3 (\citeauthor{timesfm3}~\cite{timesfm3} and Timestral (\citeauthor{timestral}~\cite{timestral}). All three models support multivariate forecasting with additional past-known $X^{pcov}$ and future-known $X^{fcov}$ covariates. They also use patching for input processing and return quantile predictions via a quantile head. Each model has its unique feature: Chronos-2 is a encoder-only transformer that follows the design of the T5 encoder (\citeauthor{t5encoder}~\cite{t5encoder}); TiRex-2 builds on xLSTM (\citeauthor{xlstm}~\cite{xlstm}) and allows for efficient streaming with constant memory; TimesFM-3 adds multivariate token construction, where each patch gets concatenated with future patches to allow the model to see future known signals; Timestral uses separate context and prediction tokens with causal temporal modeling, and is pre-trained only on synthetic data. A more detailed introduction to the models is made in the following subchapters.
 
 
 \section{Chronos-2}
@@ -61,9 +61,29 @@ It extends this scaling with a binary gate $b$ that bypasses the transformation 
 The block is build from two parts. The time mixer which process each variate independently along the time axis $N$. It processes the time series by a bi-directional weight-tied xLSTM (\citeauthor{bixlstm}~\cite{bixlstm}). Target and past-covariate tokens are processed strictly forward, future-known covariates tokens are processed reverse and then combined by a linear fusion layer. The xLSTM alternates between mLSTM and sLSTM blocks. At the end of of the time mixer a MLP with a residual connection is added.
 The variate mixer uses multi-head self-attention with an asymmetric mask for each group and is inactive for univariate forecasting. The mask allows target queries to read from covariate keys but covariate queries cannot read target keys. A MLP with residual connection is also added at the end of the variate mixer.
 
-After alternating between time mixer and variate mixer the quantile predictions are then created by a two-layer MLP and scaled back.
+After alternating between time mixer and variate mixer the final quantile predictions $\hat{Y} \in \mathbb{R}^{H \times V^{tgt} \times K}$ are then created by a two-layer MLP and scaled back.
 
 Since TiRex-2 uses a recurrent model as a time mixer, it is very efficient on long context. It scales with $\mathcal{O}(V \ N)$ on the time axis, while an attention-based time mixer would scale with $\mathcal{O}(V \ N^2)$. This allows TiRex-2 to be efficient in streaming tasks.
+
+
+\section{TimesFM-3}
+\label{sec:foundationmodels:timesfm3}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=1.0\linewidth]{images/timesfm3.png}
+	\caption[TimesFM-3 architecture]{Overview of the TimesFM-3 architecture:
+		input embedding with patching, Transformer backbone with causal temporal attention on time axis and full variate attention on variate axis, and finally the residual block for quantile predictions.
+		Figure from \citeauthor{timesfm3}~\cite{timesfm3}.}
+	\label{fig:timesfm3}
+\end{figure}
+
+TimesFM is a family of pretrained time-series foundation models for zero-shot forecasting with a decoder-only transformer architecture as backbone. The first version \citeauthor{timesfm}~\cite{timesfm} with around 200M parameters was univariate only. TimesFM-3 improves its predecessors with multivariate zero-shot forecasting and supports past-known $X^{pcov}$ and future-known $X^{fcov}$ covariates as additional inputs which increases its parameter count to 330M. It uses a very similar inference pipeline compared to models such as Chronos-2, Tirex-2 and Timestral.
+
+First, inputs $X \in \mathbb{R}^{V \times (T+H)}$ get patched to non overlapping patches of length $P=32$. Then values get scaled by $z$-score normalization. TimesFM-3 adds multivariate token construction. It concatenates each current patch with future patches. This allows the model to see future signals of future-known covariates.
+A mask for missing values in the time series is also concatenated. Each patch is then processed and tokenized by a residual block.
+
+While its predecessors predicted patch by patch in an autoregressive way, the current version forecasts the horizon in a single pass by appending masked placeholder tokens. The tokens are then processed by an decoder-only transformer block which alternates between causal temporal attention and full variate attention. A token can see only past tokens within its own variate and a token can see all other variates for the current time step. Final quantile outputs $\hat{Y} \in \mathbb{R}^{H \times V^{tgt} \times K}$ are created by a separate residual block and scaled back to original scale with the statistics of the context. 
 
 
 \section{Timestral}
@@ -78,13 +98,13 @@ Since TiRex-2 uses a recurrent model as a time mixer, it is very efficient on lo
 	\label{fig:timestral}
 \end{figure}
 
-Timestral is the most recent foundation model in our selection. Four different model sizes with 5M, 28M, 123M and 209M Parameters are published. All model sizes are using the same architecture and only differ by model dimension $D$ and the number of blocks and heads used for the transformer backbone. As Chronos-2 and TiRex-2 it allows mutltivariate forecasting with additional past-known and future-known covariates. The inputs $X \in \mathbb{R}^{V \times (T+H)}$ are scaled with a binary aware scaler that uses the inverse hyperbolic sine as in TiRex-2 (\autoref{eq:binary_aware_scaling}). Only the statistics of the context window $T$ are used for normalisation and denormalisation targets, past-known and future-known covariates. 
+Timestral is puplished with four different model sizes: 5M, 28M, 123M and 209M Parameters. All model sizes are using the same architecture and only differ by model dimension $D$ and the number of blocks and heads used for the transformer backbone. As Chronos-2 and TiRex-2 it allows mutltivariate forecasting with additional past-known and future-known covariates. The inputs $X \in \mathbb{R}^{V \times (T+H)}$ are scaled with a binary aware scaler that uses the inverse hyperbolic sine as in TiRex-2 (\autoref{eq:binary_aware_scaling}). Only the statistics of the context window $T$ are used for normalisation and denormalisation targets, past-known and future-known covariates. 
 
 After scaling values are patched with patch size $P=32$ and embedded into a single token by a two-layer residual network which produces the context tokens $Z_{c} \in \mathbb{R}^{V \times N \times D}$. Timestral introduces decoupled horizon forecasting (DHF). It creates separate tokens for context and predictions. Prediction tokens $Z_{p} \in \mathbb{R}^{V \times N \times D}$ are copies from a single learned embedding, distinguished only by their temporal position and take the same temporal position as the context tokens $Z_{c}$. Both tokens are processed by the same causal transformer with shared parameters. A mask does not allow context tokens to attend to prediction tokens, while prediction tokens attend to context and prediction tokens inside the same block. The token types form two separate streams and are processed by the transformer backbone. The tokens alternate in multiple blocks between temporal attention and variate attention with following distinction to other models: Only every fourth block apply variate attention. Rotary position embeddings (RoPE) (\citeauthor{rotarypositions}~\cite{rotarypositions}) encodes token position in temporal attention. Also, Timestral does not use dropout in the transformer backbone. 
 
 Another distinction of Timestral is the creation of quantiles. The final tokens $\hat{Z} \in \mathbb{R}^{V \times N \times D}$ are processed by a two-layer residual network which outputs 21 quantiles for each time step. But only the median is directly used as output and the other quantiles by adding or subtracting cumulative sums of positive (softplus) increments which avoids quantile crossing. The final quantile outputs are then inverted back to original scale by using the statistics of the context.
 
-Currently Timestral-209M leads the benchmark results on GIFT-Eval (\citeauthor{gifteval}~\cite{gifteval}) and fev-bench (\citeauthor{fevbench}~\cite{fevbench}) while pre-trained only on synthetic data.
+Timestral-209M shows strong results in benchmark results for GIFT-Eval (\citeauthor{gifteval}~\cite{gifteval}) and fev-bench (\citeauthor{fevbench}~\cite{fevbench}) while pre-trained only on synthetic data.
 
 
 %% 

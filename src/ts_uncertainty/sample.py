@@ -241,3 +241,71 @@ def samples_to_timestral_inputs(samples):
     context = torch.stack(xs)
     known = torch.stack(knowns) if has_cov == {True} else None
     return context, None, known, torch.stack(ys)
+
+
+def sample_to_timesfm3_input(s: Sample):
+    """
+    returns:
+      context: (1, T) or (T,)    target history, 2-d only when there are covariates
+      known:   (V, T + H) or None  covariates over context + horizon (past-and-future covariates)
+      target:  (1, H)            ground truth
+    """
+    x = np.asarray(s.context, dtype=np.float32)
+    y = np.asarray(s.target, dtype=np.float32)
+    T, H = len(x), len(y)
+
+    known = None
+    if s.covariate is not None and np.size(s.covariate) > 0:
+        c = np.asarray(s.covariate, dtype=np.float32)
+        if c.ndim == 1:
+            c = c[:, None]
+        assert c.shape[0] >= T + H, "covariates must cover context + horizon"
+        known = np.ascontiguousarray(c[:T + H].T)  # (V, T + H)
+        x = x[None]                                # (1, T): one target variate next to V covariates
+
+    return x, known, y[None]
+
+
+def samples_to_timesfm3_inputs(samples):
+    """
+    returns:
+      contexts: list of B (T,) or (1, T)       inputs of TimesFM3Evaluator.predict_batch
+      known:    list of B (V, T + H) or None, or None if no sample has covariates
+      target:   (B, 1, H)
+    """
+    xs, knowns, ys = zip(*(sample_to_timesfm3_input(s) for s in samples))
+    known = None if all(k is None for k in knowns) else list(knowns)
+    return list(xs), known, np.stack(ys)
+
+
+def sample_to_ciproto_input(s: Sample):
+    """
+    returns:
+      history: (1, T)              target history as one variable
+      known:   (V, T + H) or None  covariates over context + horizon (future covariates)
+      target:  (1, H)              ground truth
+    """
+    x = torch.as_tensor(s.context, dtype=torch.float32)
+    y = torch.as_tensor(s.target, dtype=torch.float32)
+    T, H = len(x), len(y)
+
+    known = None
+    if s.covariate is not None and np.size(s.covariate) > 0:
+        c = torch.as_tensor(s.covariate, dtype=torch.float32)
+        if c.ndim == 1:
+            c = c[:, None]
+        assert c.shape[0] >= T + H, "covariates must cover context + horizon"
+        known = c[:T + H].T.contiguous()         # (V, T + H)
+
+    return x[None], known, y[None]
+
+
+def samples_to_ciproto_inputs(samples):
+    """
+    returns:
+      histories: list of B (1, T)   one ci-proto forecast call each (rows of one call are joint)
+      known:     list of B (V, T + H) or None
+      target:    (B, 1, H)
+    """
+    xs, knowns, ys = zip(*(sample_to_ciproto_input(s) for s in samples))
+    return list(xs), list(knowns), torch.stack(ys)

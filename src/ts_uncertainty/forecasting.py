@@ -1,7 +1,8 @@
 """One wrapper around the forecasting models compared in the thesis, with a unified output.
 
 `ForecastModel(name, ...)` loads one of `MODELS` through its original library
-(statsforecast, chronos-forecasting, tirex-2, timestral) and `forecast(samples)` turns
+(statsforecast, chronos-forecasting, tirex-2, timestral, timesfm,
+continuousintelligence) and `forecast(samples)` turns
 Samples into a `QuantileForecast`: quantiles of shape (B, Q, H) on a common grid
 of quantile levels, plus the context and ground truth, so every model's output can go
 straight into the metrics and `plot_sample`.
@@ -11,26 +12,66 @@ straight into the metrics and `plot_sample`.
     plot_sample(s, prediction=fc.quantiles[0], quantiles=fc.quantile_levels)
 """
 
+import os
+import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import torch
 
 from ts_uncertainty.sample import (
     Sample,
+    samples_to_ciproto_inputs,
     samples_to_chronos2_inputs,
     samples_to_sf_inputs,
+    samples_to_timesfm3_inputs,
     samples_to_timestral_inputs,
     samples_to_tirex2_inputs,
 )
 
 # statsforecast models: ForecastModel name -> statsforecast class (= its output column)
 STAT_MODELS = {"autoarima": "AutoARIMA", "autotheta": "AutoTheta", "seasonalnaive": "SeasonalNaive"}
-MODELS = (*STAT_MODELS, "chronos2", "tirex2", "timestral")
+MODELS = (*STAT_MODELS, "chronos2", "tirex2", "timestral", "timesfm3", "ciproto")
 TIMESTRAL_SIZES = ("5M", "28M", "123M", "209M")
 # TiRex-2's native levels; every other model outputs these too.
 DEFAULT_QUANTILE_LEVELS = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+
+
+def _use_venv_cuda_toolkit() -> None:
+    """Build torch extensions (TiRex-2's flashrnn sLSTM kernel) with the venv's CUDA 13 toolkit.
+
+    Without CUDA_HOME, torch falls back to the system nvcc (/usr/bin, CUDA 12) and flashrnn links
+    the system libcudart.so.12 next to torch's CUDA 13 runtime. Once ci-proto has been loaded,
+    TileLang's global libcudart stub then serves those CUDA 12 calls, can't resolve them and
+    aborts the process (kills the Jupyter kernel). flashrnn links with `-L<CUDA_HOME>/lib
+    -lcudart -lcublas`, so the pip toolkit also needs the unversioned symlinks a CUDA install has.
+    """
+    if os.environ.get("CUDA_HOME") or sys.platform != "linux":
+        return
+    try:
+        import nvidia
+    except ImportError:
+        return
+    for root in map(Path, nvidia.__path__):
+        home = root / "cu13"
+        if not (home / "bin" / "nvcc").is_file():
+            continue
+        for name in ("libcudart.so", "libcublas.so"):
+            link = home / "lib" / name
+            if not link.exists() and (home / "lib" / f"{name}.13").exists():
+                try:
+                    link.symlink_to(f"{name}.13")
+                except OSError:
+                    return  # read-only venv: keep torch's default toolkit
+        os.environ["CUDA_HOME"] = str(home)
+        if "torch.utils.cpp_extension" in sys.modules:  # it reads CUDA_HOME once, at import
+            sys.modules["torch.utils.cpp_extension"].CUDA_HOME = str(home)
+        return
+
+
+_use_venv_cuda_toolkit()
 
 
 @dataclass
@@ -144,6 +185,8 @@ class ForecastModel:
             "chronos2": "amazon/chronos-2",
             "tirex2": "NX-AI/TiRex-2",
             "timestral": f"mistralai/Timestral-{size}",
+            "timesfm3": "google/timesfm-3.0-pytorch",
+            "ciproto": "ContinuousIntelligence/ci-proto",
         }[name]
         self.model = self._load()
 
@@ -159,6 +202,8 @@ class ForecastModel:
             "chronos2": lambda: self.model.model.chronos_config,
             "tirex2": lambda: self.model.model.stack_config,
             "timestral": lambda: self.model.config,
+            "timesfm3": lambda: self.model.config,
+            "ciproto": lambda: self.model.info,
         }[self.name]()
 
     @property
@@ -170,6 +215,10 @@ class ForecastModel:
             return tuple(self.model.quantiles)
         if self.name == "tirex2":
             return tuple(round(float(q), 6) for q in self.model.model.quantiles)
+        if self.name == "timesfm3":
+            return tuple(round(float(q), 6) for q in self.model.config.quantiles)
+        if self.name == "ciproto":
+            return tuple(round(float(q), 6) for q in self.model.quantiles)
         return tuple(self.model.quantile_levels)
 
     def _load(self):
@@ -183,6 +232,19 @@ class ForecastModel:
             from tirex2 import load_model
 
             return load_model(self.checkpoint, device=self.device)
+        if self.name == "timesfm3":
+            from timesfm3 import ModelConfig, TimesFM3Evaluator
+
+            config = ModelConfig(checkpoint_path=self.checkpoint, per_core_batch_size=self.batch_size, device=self.device)
+            return TimesFM3Evaluator(config)
+        if self.name == "ciproto":
+            import continuousintelligence as ci
+
+            model = ci.load_model(self.checkpoint, device=self.device)
+            # Its tta.json clamps forecasts at 0 when the context is non-negative and rounds
+            # them when it is integer-valued; turn both off like make_positive for TimesFM-3.
+            model._tta = {**model._tta, "clip_nonnegative": 0, "integer_round": 0}
+            return model
         from timestral import TimestralForecaster
 
         return TimestralForecaster.from_pretrained(self.checkpoint, device=self.device)
@@ -197,7 +259,9 @@ class ForecastModel:
 
         prediction_length defaults to the samples' horizon H (must be the same for all).
         predict_kwargs go to the underlying call, e.g. cross_learning (Chronos-2),
-        tta_sign_flip (TiRex-2), symmetric_averaging (Timestral).
+        tta_sign_flip (TiRex-2), symmetric_averaging (Timestral),
+        use_symmetric_averaging / univariate (TimesFM-3),
+        categorical_future (ci-proto).
         """
         if isinstance(samples, Sample):
             samples = [samples]
@@ -215,6 +279,8 @@ class ForecastModel:
             "chronos2": self._forecast_chronos2,
             "tirex2": self._forecast_tirex2,
             "timestral": self._forecast_timestral,
+            "timesfm3": self._forecast_timesfm3,
+            "ciproto": self._forecast_ciproto,
         }[self.name](samples, H, levels, **predict_kwargs)
 
         T = min(len(s.context) for s in samples)  # contexts may differ in length; keep the common tail
@@ -284,6 +350,34 @@ class ForecastModel:
             )
             chunks.append(out.quantiles[:, 0].transpose(1, 2).float().cpu().numpy())  # (b, Q, H)
         return select_quantiles(np.concatenate(chunks), self.native_quantile_levels, levels)
+
+    def _forecast_timesfm3(self, samples, H, levels, **predict_kwargs) -> np.ndarray:
+        contexts, known, _ = samples_to_timesfm3_inputs(samples)  # B x (T,) or (1, T), B x (V, T + H)
+        # TimesFM3Evaluator defaults to benchmark settings; make_positive would clamp the
+        # (z-normalised, often negative) series at 0, so turn it off unless asked for.
+        predict_kwargs.setdefault("make_positive", False)
+        predict_kwargs.setdefault("use_symmetric_averaging", False)
+        out = self.model.predict_batch(
+            contexts=contexts,
+            horizon=H,
+            past_future_covariates=known,
+            return_quantiles=True,
+            **predict_kwargs,
+        )  # B x quantiles (H, Q), or (1, H, Q) with covariates
+        native = self.native_quantile_levels
+        quantiles = np.stack([np.asarray(o.quantiles).reshape(H, len(native)).T for o in out])  # (B, Q, H)
+        return select_quantiles(quantiles, native, levels)
+
+    def _forecast_ciproto(self, samples, H, levels, **predict_kwargs) -> np.ndarray:
+        # All rows of one ci-proto call are forecast jointly and its `series_ids` mode pools
+        # series (cross-learning), so every sample gets its own call to stay independent.
+        histories, known, _ = samples_to_ciproto_inputs(samples)  # B x (1, T), B x (V, T + H)
+        out = [
+            self.model.forecast(x, horizon=H, future_covariates=k, **predict_kwargs)[0]  # (Q, H)
+            for x, k in zip(histories, known)
+        ]
+        quantiles = torch.stack(out).float().cpu().numpy()  # (B, Q, H)
+        return select_quantiles(quantiles, self.native_quantile_levels, levels)
 
 
 def select_quantiles(
