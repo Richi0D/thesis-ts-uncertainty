@@ -35,6 +35,10 @@ default and assume a series scale of about 1. With relative=True they are multip
 std of the clean context, so the same settings work on unnormalised real series of any scale
 (models that standardise with the context then see the same perturbation strength).
 
+Missing values (NaN, e.g. in real series) are ignored: the context std and the amplitude
+baseline are computed from the observed values only, spikes are only placed on observed values,
+and a missing value stays missing (no value is filled in).
+
 The episode helpers (draw_episodes, signed, scale_factor) are shared with the dynamics
 shifts of ChaoticGenerator.
 """
@@ -264,7 +268,9 @@ class Injector:
             shift_info = {"delta_slope": delta}
         elif own_shift == "amplitude":
             factor = scale_factor(rng, self.shift_scale_range, shift_sign)
-            baseline = _linear_fit(y, ~active if (~active).sum() >= 2 else np.ones(length, dtype=bool))
+            observed = ~np.isnan(y)
+            outside = ~active & observed
+            baseline = _linear_fit(y, outside if outside.sum() >= 2 else observed)
             y = np.where(active, baseline + factor * (y - baseline), y)
             effect = np.log(factor) * active
             shift_info = {"factor": factor}
@@ -284,7 +290,7 @@ class Injector:
         spike_idx = sample.spike_idx
         spike_heights = np.zeros(0)  # (n_spikes,), signed heights added at spike_idx
         if self.spikes:
-            allowed = _region_mask(self.spike_region, T, H)
+            allowed = _region_mask(self.spike_region, T, H) & ~np.isnan(y)  # no spikes on missing values
             if self.spike_period is None:
                 spike_idx = np.flatnonzero((rng.random(length) < self.spike_prob) & allowed)
                 spike_heights = np.array([scale * signed(rng, self.spike_magnitude_range) for _ in spike_idx])
@@ -331,11 +337,14 @@ class Injector:
 
 
 def _context_scale(context: np.ndarray) -> float:
-    """Std of the context, falling back to |mean| (or 1) for a constant context."""
-    std = float(context.std())
-    if std > 1e-6 * (1.0 + abs(float(context.mean()))):
+    """Std of the observed context values, falling back to |mean| (or 1) for a constant context."""
+    observed = context[~np.isnan(context)]
+    if len(observed) == 0:
+        return 1.0
+    std, mean = float(observed.std()), float(observed.mean())
+    if std > 1e-6 * (1.0 + abs(mean)):
         return std
-    return abs(float(context.mean())) or 1.0
+    return abs(mean) or 1.0
 
 
 def _region_mask(region: str, context_length: int, horizon: int) -> np.ndarray:
@@ -349,8 +358,13 @@ def _region_mask(region: str, context_length: int, horizon: int) -> np.ndarray:
 
 
 def _linear_fit(y: np.ndarray, mask: np.ndarray) -> np.ndarray:
-    """Least-squares line a + b * t through y[mask], evaluated at every t."""
+    """Least-squares line a + b * t through y[mask], evaluated at every t.
+
+    With fewer than 2 points the line is flat at their mean (0 without any point).
+    """
     t = np.arange(len(y), dtype=np.float64)
+    if mask.sum() < 2:
+        return np.full(len(y), float(y[mask].mean()) if mask.any() else 0.0)
     b, a = np.polyfit(t[mask], y[mask], 1)
     return a + b * t
 

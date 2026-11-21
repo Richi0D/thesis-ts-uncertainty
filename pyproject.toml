@@ -29,6 +29,7 @@ dependencies = [
     "timestral @ git+https://github.com/mistralai/timestral.git",
     "timesfm[torch]>=3.0.2",
     "continuousintelligence>=0.2.0",
+    "fev>=0.10.0",
 ]
 
 

@@ -19,15 +19,33 @@ These are the main models used for the thesis:
 | --- | --- | --- | --- | --- | --- | --- |
 | [AutoTheta](https://www.researchgate.net/publication/294420765_Models_for_optimising_the_theta_method_and_their_relationship_to_state_space_models) | local | fit per series | full history | unrestricted | - | any |
 | [Chronos-2](https://github.com/amazon-science/chronos-forecasting) | zero-shot | 120M | 8192 | 1024 | 16 | 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99 |
-| [TiRex-2](https://github.com/NX-AI/tirex-2) | zero-shot | 38.4M (univariate), 82.5M (multivariate) | 2048 | 320 | 32 | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 |Un
+| [TiRex-2](https://github.com/NX-AI/tirex-2) | zero-shot | 38.4M (univariate), 82.5M (multivariate) | 2048 | any (320 default) | 32 | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 |
 | [Timestral](https://github.com/mistralai/timestral) | zero-shot | 5M, 28M, 123M, 209M | 32,768 | 1024 | 32 | 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99 |
 | [TimesFM-3](https://github.com/google-research/timesfm) | zero-shot | 330M | 15,360 | 2048 | 32 | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 |
-| [ci-proto](https://github.com/continuousintelligence/ci) | zero-shot | 167M | 16,384 (2M+ with long checkpoint) | any | - | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 |
+| [ci-proto](https://github.com/continuousintelligence/ci) | zero-shot | 167M | 16,384 (2M+ with long checkpoint) | any (320 default) | - | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 |
 
 The common setting for experiments that every model can cover is:
 | Context | Horizon | Quantiles |
 | --- | --- | --- |
 | 2048 | 320 | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 |
+
+
+## fev-bench
+
+`ts_uncertainty.fev_bench` turns every evaluation window of a [fev-bench](https://github.com/autogluon/fev) task into `Sample`s (one per series and target column, the full history as context unless `context_length` is set), with the raw fev values: no normalisation, missing values stay NaN. All modifications happen in the `Injector`; use `relative=True`, since fev series are not on a common scale. Metrics are the task's fev metrics (SQL, MASE, WAPE, WQL); without a modification they equal the official `task.evaluation_summary`.
+
+```python
+from ts_uncertainty.fev_bench import load_tasks, evaluate_task, run_benchmark
+
+models = {"tirex2": {"name": "tirex2"}, "seasonalnaive": {"name": "seasonalnaive"}}
+res = evaluate_task(models, load_tasks(["hospital"])[0], modify=Injector(shift=True, relative=True, seed=0))
+res.summary, res.per_sample              # fev metrics per model / MASE, SQL, coverage per sample
+bench = run_benchmark(models, modify=None)  # all 100 tasks
+```
+
+`modify` can also return several variants of a sample as `{label: Sample}` (or a list), e.g. a shift-point sweep `lambda s: {sp: inj(s, shift_point=sp, shift_type="trend") for sp in (0.5, 0.7, 0.9)}`. The variants are forecast together and scored separately (column `variant` in `summary` / `per_window` / `per_sample`).
+
+Past-only, static and non-numeric covariates are dropped; known numeric covariates are used with `covariates=True`. Missing values are ignored by the injector (scale and fits from the observed values, NaN stays NaN) and by the metrics; only the statsforecast models get a filled copy of their input, the neural models get the NaNs (`fill_missing=None`, auto; `True` / `False` forces it for all models).
 
 
 ## Synthetic Data Generator
@@ -153,7 +171,7 @@ For each series, the injector draws one shift type from `shift_types`:
 | `noise` | noise std is multiplied or divided by a factor | `shift_scale_range` |
 | `amplitude` | deviation from the linear trend (fitted outside the shift) is multiplied or divided by a factor | `shift_scale_range` |
 
-`noise` with `noise=False` adds noise only during the shift. `amplitude` on a series without a periodic or chaotic component has almost no effect. The default magnitude ranges assume the series has a scale of about 1. For other series, use `relative=True`, standardise first, or rescale the shift and spike ranges.
+`noise` with `noise=False` adds noise only during the shift. `amplitude` on a series without a periodic or chaotic component has almost no effect. The default magnitude ranges assume the series has a scale of about 1. For other series, use `relative=True`, standardise first, or rescale the shift and spike ranges. Missing values (NaN) are ignored: the context std and the amplitude baseline use the observed values only, spikes land only on observed values, and a missing value stays missing.
 
 `inj(sample, shift_point=0.6, shift_type="level", shift_sign=1)` forces a specific shift on one sample, even with `shift=False`. `shift_sign` fixes the direction: `+1` shifts the level or slope up or multiplies the noise / amplitude by the factor, `-1` shifts down or divides by it; `None` (default) picks the direction at random.
 
@@ -224,6 +242,11 @@ A single univariate time series with a covariate for shift.
 3. Inject shift into context and forecast horizon. Assumption: models should detect shift. Uncertainty should increase.
 4. Inject reccurent shift patterns. Assumption: models should detect shift. Uncertainty should increase.
 
+### Other experiments
+
+- add a trend for each timestep on a series. Shows how much context is needed to detect trend (do for up and down trend)
+- continously remove context and replace with null values. How much loss of context each model can handle.
+
 
 ### Autoregressive prediction
 
@@ -234,6 +257,8 @@ How the models will react to this? Quantile collapse or uncertainty increase?
 - Mean
 - Autoregressive multi-quantile decoding (Morai 2.0)
 - Only xlstm: keep state from previous generation. (or out of scope: fix state of real context and use it as streaming state)
+
+training a new model and add a additional mask for auto regressive values. might also add 2 additional axis for upper and lower quantile.
 
 
 ## Licensing
